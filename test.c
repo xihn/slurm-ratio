@@ -1,19 +1,110 @@
-job_submit_test.c
+test.c
 /*
  * Does some shit
  */
 
 #include <limits.h>
 #include <regex.h>
-#include <slurm/slurm_errno.h>
-#include "src/slurmctld/slurmctld.h"
+#include <stdint.h>
+// #include <slurm/slurm_errno.h>`
+// #include "src/slurmctld/slurmctld.h"
+
+/* Required by Slurm job_submit plugin interface. */
+const char plugin_name[] = "Require CPU/GPU ratio";
+const char plugin_type[] = "job_submit/require_cpu_gpu_ratio";
+// const uint32_t plugin_version = SLURM_VERSION_NUMBER;
+
+/* Global variables. */
+const char *myname = "job_submit_require_cpu_gpu_ratio";
+/* GRES GPU regex. */
+const char *gpu_regex="^gpu:[_[:alnum:]:]*([[:digit:]]+)$";
+
+/* GRES GPU name regex */
+const char *gpu_name_regex="";
+
+/* Number of partitions to be checked - need to modify. */
+const int  npart = 1;
+/* The Partition to be checked - need to modify. */
+const char *mypart[2] = {"es1"};
+/* The CPU/GPU ratio that is checked against - need to modify. */
+const int  ratio[2] = {2};
+
+const int *maxA40 = 16;
+const int *maxV100 = 4;
+const int *max2080TI = 2;
+
+/* Convert string to integer. */
+int _str2int (char *str, uint32_t *p2int) {
+    long int l;
+    char *p;
+
+    l = strtol(str, &p, 10);
+
+    if ((*p != '\0') || (l > UINT32_MAX) || (l < 0)) {
+        return -1;
+    }
+
+    *p2int = l;
+
+    return 0;
+}
 
 
+int _check_ratio(char *part, char *gres, uint32_t ncpu) {
+    if (part == NULL) {
+        info("%s: missed partition info", myname);
+        return 1;
+    }
 
+    /* Loop through all partitions that need to be checked. */
+    int i;
+    for (i = 0; i < npart; i++) {
+        if (strcmp(part, mypart[i]) == 0) {
+            /* Require GRES on a GRES partition. */
+            if (gres == NULL) {
+                info("%s: missed GRES on partition %s", myname, mypart[i]);
+                return ESLURM_INVALID_GRES;
+            } else {
+                regex_t re;
+                regmatch_t rm[2];
 
+                /* NUmber of GPUs. */
+                uint32_t ngpu = 0;
 
+                if (regcomp(&re, gpu_regex, REG_EXTENDED) != 0) {
+                    info("%s: failed to compile regex '%s': %m", myname, gpu_regex);
+                    return ESLURM_INTERNAL;
+                }
 
+                int rv = regexec(&re, gres, 2, rm, 0);
 
+                regfree(&re);
+
+                if (rv == 0) { /* match */
+                    /* Convert the GPU # to integer. */
+                    if (_str2int(gres + rm[1].rm_so, &ngpu) || ngpu < 1) {
+                        info("%s: invalid GPU number %s", myname, gres + rm[1].rm_so);
+                        return ESLURM_INVALID_GRES;
+                    }
+
+                    /* Sanity check of the CPU/GPU ratio. */
+                    if (ncpu / ngpu < ratio[i]) {
+                        info("%s: CPU=%zu, GPU=%zu, not qualify", myname, ncpu, ngpu);
+                        return ESLURM_INVALID_GRES;
+                    }
+
+                } else if (rv == REG_NOMATCH) { /* no match */
+                    info("%s: missed GPU on partition %s", myname, mypart[i]);
+                    return ESLURM_INVALID_GRES;
+                } else { /* error */
+                    info("%s: failed to match regex '%s': %m", myname, gpu_regex);
+                    return ESLURM_INTERNAL;
+                }
+            }
+        }
+    }
+    return SLURM_SUCCESS;
+}
 
 
 extern int job_submit(struct job_descriptor *job_desc, uint32_t submit_uid,
