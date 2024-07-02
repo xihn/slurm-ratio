@@ -1,8 +1,8 @@
-EnforceRatio:True
-DefaultCard:V100
-EnforceMin:True
-EnforceMax:True
-Partition:es1
-{"name":"2080ti", "min":2, "max":2, "weight":"2"}
-{"name":"v100", "min":2, "max":8, "weight":"3"}
-{"name":"a40", "min":2, "max":16, "weight":"5"}
+enforce_ratio:True
+default_card:V100
+enforce_min:True
+enforce_max:True
+partition:es1
+{"name":"GRTX2080TI", "min":2, "max":2, "weight":"2"}
+{"name":"V100", "min":2, "max":8, "weight":"3"}
+{"name":"A40", "min":2, "max":16, "weight":"5"}
