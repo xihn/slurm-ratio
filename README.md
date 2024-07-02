@@ -2,7 +2,6 @@
 Slurm Job Submit Plugin for enforcing a CPU/GPU ratio
 
 
-
 loop through all 
 
 partition
