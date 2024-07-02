@@ -1,76 +1,27 @@
 # slurm-ratio
-Slurm Job Submit Plugin for enforcing a CPU/GPU ratio
+
+Job Submit plugin to enfornce the CPU/GPU ratio to facilitate accounting.
+Requires a configuration YAML file which contains several settings with the name and path defined in `configFile`. The config file accepts the following settings which must all be defined within the first 5 lines.
+- `EnforceRatio` will enforce a ratio using the weights of each card
+- `DefaultCard` is the default card used if user does not specify a card on job submittal
+- `EnforceMin` will enforce a minimum number of cpu per each card
+- `EnforceMax` will enforce a maximum number of cpu per each card
+- `Partition` is the partition to check 
+
+Card information should be placed in the YAML file after the settings and in the following format 
+<p align=center> <code>{"name":"2080ti", "min":2, "max":2, "weight":"2"}</code></p>
+
+Where `name` is the cards name in slurm gres, `min`/`max` is the minimum and maximum cpu that is required per card.
+`weight` is used to calculate the ratio and could be assigned by teraflops or VRAM or some sort of other preformance metric. When the ratio is enforced, the jobs ratio is calculated by multiplying the card count by its weight then dividing by total cpu count. For example if a user submits a job of `gpu:V100:4 ncpu = 4` and `weight` for the V100 card is set to `2` then the weight of the job will be `4 * 2 = 8` this is then divided by the number of cpus to determine the ratio `4/8 = 2`. A job submitted without specifying which card to be used (ex. gres `gpu:2`) will assume `DefaultCard`.
 
 
-loop through all 
-
-partition
-
-
-int maxA40 = 16;
-int maxV100 = 4;
-int max2080TI = 2;
-
-
-8cpu/1gpu v = 8 which is > 2
-4cpu / 2gpu = 2 which is not > 2 so fail
+Some pitfalls 
+- Errors if gres has gpu count greater than 9. I assume this won't be a problem since no node has double digit number of gpus? I also don't know how submissions work for jobs that require GPU spanning across nodes.
+- The YAML parser requires that the config has the 5 setting variables present in the order of the example config. And that GPU information is on the following line
+- Im fairly sure users can get around the entire plugin by submitting via the newer --gpu* flags rather than --gres. Ex user submits job as `sbatch --gpu 2080:2`
+- The user not specifying what gpu in gres means there is some guesswork in assuming which card will be used as the default. I don't know enough about slurm and how it chooses when GPU is not specified.
 
 
 
-example GRES: gpu:GRTX2080TI:4
-or gpu:2
-
-consts
-
-1080ti
-2080ti
-v100
-a40
-p100
-k80
 
 
-flowchart 
-job_desc->partition,
-job_desc->tres_per_node,
-job_desc->min_cpus
-
-
-pull from regex -> gpu type -> 
-var gpu type = 2080ti
-lookup in JSON file for name=vargputype
-if ratio min or max fits then slurm accept
-if not slurm deny
-
-
-./program "es1" "gpu:GRTX2080TI:4" "1"
-
-actual design:
-
-from settings read first 4 lines and set env variables  
-    EnforceRatio = 
-    DefaultCard = 
-    EnforceMin =
-    EnforceMax =
-    Partition = 
-
-
-from user input get partitions, gres, ncpu
-basic checks for validity
-    - loop through partitions
-    - etc etc, then once find match for GPU name and number
-    - if gpu name not present just use DefaultCard
-    - update global vars for max min and ratio
-
-
-    - if EnforceMin check min
-    - if EnforceMax check max
-    - if EnforceRatio check ratio
-    - else all fails just slurm accept
-
-example check in pseudocode
-if (enforcement not met eg ncpu < min) {
-    return ERROR
-}
-
- 
