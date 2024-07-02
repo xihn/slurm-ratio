@@ -6,6 +6,8 @@ test.c
 #include <limits.h>
 #include <regex.h>
 #include <stdint.h>
+
+#include <stdio.h>
 // #include <slurm/slurm_errno.h>`
 // #include "src/slurmctld/slurmctld.h"
 
@@ -33,6 +35,20 @@ const int *maxA40 = 16;
 const int *maxV100 = 4;
 const int *max2080TI = 2;
 
+int main(int argc, char *argv[]) {
+    if (argc < 3) {
+        printf("Usage: %s <string1> <string2>\n", argv[0]);
+        return 1;
+    }
+
+    printf("You entered: %s and %s\n", argv[1], argv[2]);
+
+    
+
+    return 0;
+}
+
+
 /* Convert string to integer. */
 int _str2int (char *str, uint32_t *p2int) {
     long int l;
@@ -49,6 +65,7 @@ int _str2int (char *str, uint32_t *p2int) {
     return 0;
 }
 
+int pullVars ()
 
 int _check_ratio(char *part, char *gres, uint32_t ncpu) {
     if (part == NULL) {
@@ -73,7 +90,7 @@ int _check_ratio(char *part, char *gres, uint32_t ncpu) {
 
                 if (regcomp(&re, gpu_regex, REG_EXTENDED) != 0) {
                     info("%s: failed to compile regex '%s': %m", myname, gpu_regex);
-                    return ESLURM_INTERNAL;
+                    return 0;
                 }
 
                 int rv = regexec(&re, gres, 2, rm, 0);
@@ -84,26 +101,26 @@ int _check_ratio(char *part, char *gres, uint32_t ncpu) {
                     /* Convert the GPU # to integer. */
                     if (_str2int(gres + rm[1].rm_so, &ngpu) || ngpu < 1) {
                         info("%s: invalid GPU number %s", myname, gres + rm[1].rm_so);
-                        return ESLURM_INVALID_GRES;
+                        return 0;
                     }
 
                     /* Sanity check of the CPU/GPU ratio. */
                     if (ncpu / ngpu < ratio[i]) {
                         info("%s: CPU=%zu, GPU=%zu, not qualify", myname, ncpu, ngpu);
-                        return ESLURM_INVALID_GRES;
+                        return 0;
                     }
 
                 } else if (rv == REG_NOMATCH) { /* no match */
                     info("%s: missed GPU on partition %s", myname, mypart[i]);
-                    return ESLURM_INVALID_GRES;
+                    return 0;
                 } else { /* error */
                     info("%s: failed to match regex '%s': %m", myname, gpu_regex);
-                    return ESLURM_INTERNAL;
+                    return 0;
                 }
             }
         }
     }
-    return SLURM_SUCCESS;
+    return 1;
 }
 
 
