@@ -1,3 +1,4 @@
+print_debug_test.c
 /* (Old header from original plugin)
  * Copyright (c) 2016-2017, Yong Qin <yong.qin@lbl.gov>. All rights reserved.
  *
