@@ -1,8 +1,0 @@
-enabled=True
-{"name":"2080ti", "min":1, "max":8, "weight":"2"}
-{"name":"v100", "min":1, "max":8, "weight":"3"}
-{"name":"a40", "min":1, "max":8, "weight":"5"}
-
-
-
-
