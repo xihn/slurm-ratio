@@ -24,7 +24,7 @@ job_submit_require_cpu_gpu_ratio.c
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <slurm/slurm_errno.h>`
+#include <slurm/slurm_errno.h>
 #include "src/slurmctld/slurmctld.h"
 
 #define MAX_LINE_LENGTH 256
