@@ -1,7 +1,7 @@
 # slurm-ratio
 
 Job Submit plugin to enfornce the CPU/GPU ratio to facilitate accounting.
-Requires a configuration YAML file which contains several settings with the name and path defined in `configFile`. The config file accepts the following settings which must all be defined within the first 5 lines.
+Requires a configuration YAML file which contains several settings with the name and path defined in `configFile` (line 51). The config file accepts the following settings which must all be defined within the first 5 lines.
 - `EnforceRatio` will enforce a ratio using the weights of each card
 - `DefaultCard` is the default card used if user does not specify a card on job submittal
 - `EnforceMin` will enforce a minimum number of cpu per each card
