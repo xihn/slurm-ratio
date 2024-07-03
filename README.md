@@ -20,7 +20,7 @@ Some pitfalls
 - The YAML parser **requires** that the config has the 5 setting variables present in the exact order of the example config. And that GPU information is on the following line
 - Im fairly sure users can get around the entire plugin by submitting via the newer `--gpu*` flags rather than `--gres`. Ex user submits job as `srun --gpu 2080:2`
 - The user not specifying what gpu in gres means there is some guesswork in assuming which card will be used as the default. I don't know enough about slurm and how it chooses this.
-- I have no clue portability wise, think C11 or C98 is used by slurm? The original author used `uint32_t` however I just used int and double freely without memory alloc specs. I assume this won't be an issue. Slightly worried about memory stuffs since i was taught rust instead of C in class. `DefaultCard[20]` and `Partition[20]` are a bit generous but its fine.
+- I have no clue portability wise, think C11 or C98 is used by slurm? The original author used `uint32_t` however I just used int and double freely without memory alloc specs. I assume this won't be an issue. A bit worried about memory stuffs since i was taught rust instead of C in class. `DefaultCard[20]` and `Partition[20]` are a bit generous but its fine.
 
 
 
