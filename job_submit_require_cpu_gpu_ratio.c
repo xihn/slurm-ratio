@@ -279,7 +279,7 @@ int _check_ratio(char *part, char *gres, uint32_t ncpu) {
                 /* Enforce ratio*/
                 if (enforce_ratio) {
                     int weight_int = atoi(found_entry->weight);
-                    if (((double) ncpu / (ngpu * weight_int)) <= (double) ratio) {
+                    if (((double) ncpu / (ngpu * weight_int)) < (double) ratio) {
                         info("Ratio of %.2f is lower than %d , job does not qualify", (double) ncpu / (ngpu * weight_int), ratio);
                         return ESLURM_INVALID_GRES;
                     }
