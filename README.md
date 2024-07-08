@@ -3,13 +3,16 @@
 Job Submit plugin to enfornce the CPU/GPU ratio to facilitate accounting.
 
 ### Setup
-
-1. Clone repo ```git clone https://github.com/xihn/slurm-ratio.git
-```
-2. Configure `job_submit_ratio_config.yml` to your own needs. See the [configuration instructions](#Configuration)
-3. Make sure the name of your configuration file matches `configFile` in line 51
-4. Compile `gcc -shared -fPIC -pthread -I${SLURM_SRC_DIR} job_submit_require_cpu_gpu_ratio.c -o job_submit_require_cpu_gpu_ratio.so`
-5. 
+1. Clone the repo
+   ```sh
+   git clone https://github.com/xihn/slurm-ratio.git
+   ```
+3. Configure `job_submit_ratio_config.yml` to your own needs. See the [configuration instructions](#Configuration)
+4. Make sure the name of your configuration file matches `configFile` in line 51
+5. Compile 
+   ```sh
+   gcc -shared -fPIC -pthread -I${SLURM_SRC_DIR} job_submit_require_cpu_gpu_ratio.c -o job_submit_require_cpu_gpu_ratio.so
+   ```
 
 ### Testing
 
