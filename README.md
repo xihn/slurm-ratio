@@ -22,6 +22,3 @@ Some pitfalls
 - The user not specifying what gpu in gres means there is some guesswork in assuming which card will be used as the default. I don't know enough about slurm and how it chooses this.
 - I have no clue portability wise, think C11 or C98 is used by slurm? The original author used `uint32_t` however I just used int and double freely without memory alloc specs. I assume this won't be an issue. A bit worried about memory stuffs since i was taught rust instead of C in class. `DefaultCard[20]` and `Partition[20]` are a bit generous but its fine.
 
-
-
-
