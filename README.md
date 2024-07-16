@@ -32,6 +32,13 @@ Card information should be placed in the YAML file after the settings and in the
 Where `name` is the cards name in slurm gres, `min`/`max` is the minimum and maximum cpu that is required per card.
 `weight` is used to calculate the ratio and could be assigned by teraflops or VRAM or some sort of other preformance metric. When the ratio is enforced, the jobs ratio is calculated by multiplying the card count by its weight then dividing by total cpu count. For example if a user submits a job of `gpu:V100:4 ncpu = 4` and `weight` for the V100 card is set to `2` then the weight of the job will be `4 * 2 = 8` this is then divided by the number of cpus to determine the ratio `4/8 = 2`. A job submitted without specifying which card to be used (ex. gres `gpu:2`) will assume `DefaultCard`.
 
+
+### TODO
+- Change YAML parser to parse TOML master configuration file
+- Add ratio 2 as TOML line for configuration, hard code 2 as fallback
+- Do edgecase testing, eg config file gone, etc. Write tests. 
+
+
 ### Issues
 - Errors if gres has gpu count greater than 9. I assume this won't be a problem since no node has double digit number of gpus? I also don't know how submissions work for jobs that require GPU spanning across nodes.
 - The YAML parser **requires** that the config has the 5 setting variables present in the exact order of the example config. And that GPU information is on the following line
