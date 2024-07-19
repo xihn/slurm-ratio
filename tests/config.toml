@@ -1,4 +1,19 @@
+title = "TOML test"
+enable_gpu_ratio_plugin = True
+
+[tomltest]
+tomltest = "tomltest toml-test"
+testtoml = gres:test:9999
+
+[database]
+enabled = true
+ports = [ 8000, 8001, 8002 ]
+data = [ ["delta", "phi"], [3.14] ]
+temp_targets = { cpu = 79.5, case = 72.0 }
+
+[gresratio]
 enforce_ratio:True
+ratio = 2.0
 default_card:V100
 enforce_min:True
 enforce_max:True
