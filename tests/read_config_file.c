@@ -18,8 +18,9 @@ char default_card[20] = "V100";
 char partition[20] = "es1";
 
 void parse_line(const char *line) {
-    switch (firstvar)
+    switch (firstvar) {
 
+    }
 }
 
 void parse_settings(const char *line) {
@@ -62,6 +63,7 @@ int read_config_file(const char *filename) {
         if not found just return 0
 
     then look for "[gresratio]" and parse next 5 lines for settings
+    
     then look for [gresratio.cards] and parse all cards as structs
 
 
@@ -83,8 +85,10 @@ int main(int argc, char *argv[]) {
   }
 
   if (read_config_file(config_file)) {
+    print_config();
     return 1;
   } else {
+    fprintf(stderr,"Exited with error.");
     return 0;
   }
 }
