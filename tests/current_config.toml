@@ -5,8 +5,6 @@ enable_job_complete_plugin = true  # Requires Slurm restart
 
 
 
-
-
 # All partitions must be listed here.
 # If a job requests to use a partition that is not listed here,
 # it will be rejected.

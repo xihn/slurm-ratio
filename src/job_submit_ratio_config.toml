@@ -1,22 +1,25 @@
-[enable] # comment
-loremipsum = false # comment asdf
-enableGresRatioPlugin = true # comment
-loremipsum = false
+[Enable] # comment
+testtest = false # comment asdf
+enable_gres_ratio_plugin = true # comment
+testest = false
 
 # random comment
-[gresratio] #no comments allowed below this line
-enforce_ratio:true
-default_card:V100
-enforce_min:true
-enforce_max:true
-partition:es1
 
-[gresratio.cards]
-GRTX2080TI = {min = 1, max = 2, weight = 1.0}
-V100 = {min = 2, max = 8, weight = 1.0}
-A40 = {min = 2, max = 16, weight = 5.0}
+[gresratio] # no comments allowed below this line
+enforce_ratio=true
+default_card=V100
+enforce_min=true
+enforce_max=true
+partition=es1
+
+# Format for cards should be {name, min, max, multiplier}
+# read https://github.com/xihn/slurm-ratio before adding new cards
+card1 = {GRTX2080TI, 1, 2, 1.0}
+card2 = {V100, 2, 8, 1.0}
+card3 = {A40, 2, 16, 4.0}
 
 [loremipsum]
 blahblah = True
 loremipsum = [1,2,3]
+
 

@@ -1,0 +1,22 @@
+[enable] # comment
+loremipsum = false # comment asdf
+enable_gres_ratio_plugin = true # comment
+loremipsum = false
+
+# random comment
+
+[gresratio] # no comments allowed below this line
+default_card=V100
+partition=es1
+GTRX2080TI = 2.0
+V100 = 2.0
+A40 = 4.0
+
+# GRTX2080TI = {min = 1, max = 2, weight = 1.0} 2.0 # 2 cpu per 1 gpu
+# V100 = {min = 2, max = 8, weight = 1.0} # 4.0 gpu per cpu
+# A40 = {min = 2, max = 16, weight = 5.0}
+
+[loremipsum]
+blahblah = True
+loremipsum = [1,2,3]
+

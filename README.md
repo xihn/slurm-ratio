@@ -16,7 +16,7 @@ Job Submit plugin to enfornce the CPU/GPU ratio to facilitate accounting.
 
 ### Testing
 
-For testing without compiling slurm. Copy `original_refrence.c` as well as `config.yml` and run `gcc original_refrence.c` (or compile using any c11 compiler). Then run `./output "partition" "gpu:type:count" "cpu count"` with quotations included. 
+For testing without compiling slurm. `cd src/print` and run `gcc ratio_print.c` (or compile using any c11 compiler). Then run `./a.out "partition" "gpu:type:count" "cpu count"` with quotations included. 
 
 ### Configuration
  The config file accepts the following settings which must all be defined within the first 5 lines.

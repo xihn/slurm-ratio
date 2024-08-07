@@ -17,8 +17,8 @@ int disabled = 1; // defaults to Enabled or 1
 int enforce_ratio = 0;
 int enforce_min = 0;
 int enforce_max = 0;
-char default_card[MAX_LINE_LENGTH] = "V100";
-char partition[MAX_LINE_LENGTH] = "es1";
+char default_card[MAX_LINE_LENGTH] = "asdf";
+char partition[MAX_LINE_LENGTH] = "asdf";
 
 /* Card data structure */
 struct card {
@@ -67,10 +67,10 @@ int parse_boolean(const char *line) {
 
     ret = regexec(&regex, line, 0, NULL, 0);
     if (!ret) {
-        printf("true\n"); // Match found
+        //printf("true\n"); // Match found
         return 0; // True
     } else if (ret == REG_NOMATCH) {
-        printf("asdf : False\n"); // No match
+        //printf("asdf : False\n"); // No match
         return 1; // False
     } else {
         char msgbuf[100];
@@ -134,14 +134,14 @@ void read_config(const char *filename) {
     FILE *file = fopen(filename, "r");
     if (file == NULL) {
         perror("Error opening file");
-        return EXIT_FAILURE; 
+        exit(0); 
     }
 
     char *buffer = malloc(BUFFER_SIZE);
     if (buffer == NULL) {
         perror("Error allocating memory");
         fclose(file);
-        return EXIT_FAILURE;
+        exit(0);
     }
 
     while (fgets(buffer, BUFFER_SIZE, file) != NULL) {
@@ -156,37 +156,49 @@ void read_config(const char *filename) {
 
         /* This could be done more efficently */
 
-        if (strncmp(buffer, "enforce_ratio", strlen("enforce_ratio"))) {
+        if (strncmp(buffer, "enforce_ratio", strlen("enforce_ratio")) == 0) {
             enforce_ratio = parse_boolean(buffer);
         }
 
-        if (strncmp(buffer, "default_card", strlen("default_card"))) {
+        if (strncmp(buffer, "default_card", strlen("default_card")) == 0) {
             // default_card = parse_string(buffer);
             char *result = parse_string(buffer);
 
             if (result) {
                 // Ensure the result fits in the global array
                 strncpy(default_card, result, MAX_LINE_LENGTH - 1);
-                default_card[MAX_LINE_LENGTH - 1] = '\0'; // Ensure null-termination
+                default_card[MAX_LINE_LENGTH] = '\0'; // Ensure null-termination
 
                 printf("Captured value: %s\n", default_card);
                 free(result); // Free the dynamically allocated memory
             } else {
                 printf("No match found\n");
-                default_card[0] = '\0'; // Clear the global array if no match is found
+                // default_card[0] = '\0'; // Clear the global array if no match is found
             }
         }
 
-        if (strncmp(buffer, "enforce_min", strlen("enforce_min"))) {
+        if (strncmp(buffer, "enforce_min", strlen("enforce_min")) == 0) {
             enforce_min = parse_boolean(buffer);
         }
 
-        if (strncmp(buffer, "enforce_max", strlen("enforce_max"))) {
+        if (strncmp(buffer, "enforce_max", strlen("enforce_max")) == 0) {
             enforce_max = parse_boolean(buffer);
         }
 
-        if (strncmp(buffer, "partition", strlen("partition"))) {
-            partition = parse_string(buffer);
+        if (strncmp(buffer, "partition", strlen("partition")) == 0) {
+            char *result = parse_string(buffer);
+
+            if (result) {
+                // Ensure the result fits in the global array
+                strncpy(partition, result, MAX_LINE_LENGTH - 1);
+                partition[MAX_LINE_LENGTH] = '\0'; // Ensure null-termination
+
+                printf("Captured value: %s\n", default_card);
+                free(result); // Free the dynamically allocated memory
+            } else {
+                printf("No match found\n");
+                // default_card[0] = '\0'; // Clear the global array if no match is found
+            }
         }
     }
 
@@ -195,12 +207,23 @@ void read_config(const char *filename) {
     fclose(file);
 }
 
-int main(int argc, char *argv[]) {
-    if (argc != 2) {
-        fprintf(stderr, "Usage: %s <filename>\n", argv[0]);
-        return EXIT_FAILURE;
-    }
+void print_config() {
+    printf("disabled: %d\n", disabled);    
+    printf("enforce_ratio: %d\n", enforce_ratio);
+    printf("default_card: %s\n", default_card);
+    printf("enforce_min: %d\n", enforce_min);
+    printf("enforce_max: %d\n", enforce_max);
+    printf("partition: %s\n", partition);
+}
 
-    read_config(argv[1]);
+int main() { //(int argc, char *argv[])
+    // if (argc != 2) {
+    //     fprintf(stderr, "Usage: %s <filename>\n", argv[0]);
+    //     return EXIT_FAILURE;
+    // }
+    char *argv = "config.toml";
+
+    read_config(argv);
+    print_config();
     return EXIT_SUCCESS;
 }
