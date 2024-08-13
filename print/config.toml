@@ -1,22 +1,46 @@
-[enable] # comment
-loremipsum = false # comment asdf
-enable_gres_ratio_plugin = true # comment
-loremipsum = false
+[Enable]
+enable_job_submit_plugin = true   # Requires Slurm restart
+enable_spank_plugin = true   # Does not require Slurm restart
+enable_job_complete_plugin = true  # Requires Slurm restart
 
-# random comment
+enable_gres_ratio_plugin = false # Does not require slurm restart
 
-[gresratio] # no comments allowed below this line
+[gresratio] # no comments allowed in this section
 default_card=V100
 partition=es1
-GTRX2080TI = 2.0
-V100 = 2.0
-A40 = 4.0
+card.GTRX2080TI = 2.0
+card.V100 = 2.0
+card.A40 = 4.0
+card.A100 = 4.0
+card.H100 = 6.0
 
-# GRTX2080TI = {min = 1, max = 2, weight = 1.0} 2.0 # 2 cpu per 1 gpu
-# V100 = {min = 2, max = 8, weight = 1.0} # 4.0 gpu per cpu
-# A40 = {min = 2, max = 16, weight = 5.0}
+# All partitions must be listed here.
+# If a job requests to use a partition that is not listed here,
+# it will be rejected.
 
-[loremipsum]
-blahblah = True
-loremipsum = [1,2,3]
+[PartitionPrice]
+lr4 = 0.50
+lr5 = 0.75
+lr6 = 1.00
+lr7 = 1.00
+lr_bigmem = 1.50
+cf1 = 0.40
+cm1 = 0.75
+cm2 = 1.00
+es1 = 1.00
+ood_inter = 1.00# If the QoS is not in this list, the default multiplier is 1.
 
+[QosMultiplier]
+lr_normal = 1
+lr_lowprio = 0
+#lr_debug = 0.5# Provide the base path to the myLRC API WITHOUT the trailing /
+# For example,
+#  BAD: http://localhost:8080/
+#  GOOD: http://localhost:8080[API]
+# Provide the base path to the myBRC API WITHOUT the trailing /
+# For example,
+#  BAD: url = "http://localhost:8080/"
+#  GOOD: url = "http://localhost:8080"
+## On July 20th 2021 we migrated from the old lbl developed scgup based
+## endpoints to the new Coldfront based endpoints
+url = "https://mylrc.lbl.gov/api"# API token provided by the myBRC API

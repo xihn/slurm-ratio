@@ -5,6 +5,7 @@
 
 #define BUFFER_SIZE 2048
 #define MAX_LINE_LENGTH 40
+#define MAX_ENTRIES 20
 #define SWITCH "enable_gres_ratio_plugin"
 #define SECTION "[gresratio]"
 #define ENABLED_PATTERN "=\\s*true\\b"
@@ -12,49 +13,21 @@
 
 int disabled = 1; // defaults to Enabled or 1
 
-
 /*  Config variables default values, updated when config is loaded */
-int enforce_ratio = 0;
-int enforce_min = 0;
-int enforce_max = 0;
 char default_card[MAX_LINE_LENGTH] = "asdf";
 char partition[MAX_LINE_LENGTH] = "asdf";
 
 /* Card data structure */
 struct card {
   char name[MAX_LINE_LENGTH];
-  int min;
-  int max;
-  char weight[MAX_LINE_LENGTH];
+  float ratio[MAX_LINE_LENGTH];
 };
 
-int parse_enabled(const char *line) {
-    regex_t regex;
-    int ret;
-    ret = regcomp(&regex, ENABLED_PATTERN, REG_EXTENDED | REG_ICASE);
+/* Card information array */
+struct card entries[MAX_ENTRIES];
+int num_entries = 0;
 
-    if (ret) {
-        fprintf(stderr, "Could not compile regex\n");
-        return EXIT_FAILURE; // ESLURM_INTERNAL
-    }
-
-    ret = regexec(&regex, line, 0, NULL, 0);
-    if (!ret) {
-        printf("true\n"); // Match found
-        return 0; // True
-    } else if (ret == REG_NOMATCH) {
-        printf("safd : False\n"); // No match
-        return 1; // False
-    } else {
-        char msgbuf[100];
-        regerror(ret, &regex, msgbuf, sizeof(msgbuf));
-        fprintf(stderr, "Regex match failed: %s\n", msgbuf);
-        regfree(&regex);
-        return EXIT_FAILURE; // ESLURM_INTERNAL
-    }
-    regfree(&regex);
-}
-
+/* Parses a line for a boolean value after an equals sign. ex: example = false -> 0 */
 int parse_boolean(const char *line) {
     regex_t regex;
     int ret;
@@ -68,10 +41,10 @@ int parse_boolean(const char *line) {
     ret = regexec(&regex, line, 0, NULL, 0);
     if (!ret) {
         //printf("true\n"); // Match found
-        return 0; // True
+        return 0; // False
     } else if (ret == REG_NOMATCH) {
         //printf("asdf : False\n"); // No match
-        return 1; // False
+        return 1; // True
     } else {
         char msgbuf[100];
         regerror(ret, &regex, msgbuf, sizeof(msgbuf));
@@ -82,8 +55,10 @@ int parse_boolean(const char *line) {
     regfree(&regex);
 }
 
+/* Parses a string after an equals sign. Ex partition = es1 -> es1*/
 char* parse_string(const char *line) {
-    const char *pattern = "=\\s*([^\\s]+)";
+    // const char *pattern = "=\\ *([^\\ ]+)";
+    const char *pattern = "=[ \t]*([a-zA-Z0-9]+)";
     regex_t regex;
     regmatch_t match[2]; // Array to hold match positions
 
@@ -129,7 +104,6 @@ char* parse_string(const char *line) {
     }
 }
 
-
 void read_config(const char *filename) {
     FILE *file = fopen(filename, "r");
     if (file == NULL) {
@@ -147,17 +121,11 @@ void read_config(const char *filename) {
     while (fgets(buffer, BUFFER_SIZE, file) != NULL) {
         if (strncmp(buffer, SWITCH, strlen(SWITCH)) == 0) {
             /* If enableGresRatioPlugin is False then accept job*/
-            if(parse_enabled(buffer) == 1) {
-                printf("Accepting Job\n");
-                int disabled = 0;
+            if(parse_boolean(buffer) == 0) {
+                //printf("Accepting Job\n");
+                disabled = 0;
                 break;
             }
-        }
-
-        /* This could be done more efficently */
-
-        if (strncmp(buffer, "enforce_ratio", strlen("enforce_ratio")) == 0) {
-            enforce_ratio = parse_boolean(buffer);
         }
 
         if (strncmp(buffer, "default_card", strlen("default_card")) == 0) {
@@ -169,20 +137,12 @@ void read_config(const char *filename) {
                 strncpy(default_card, result, MAX_LINE_LENGTH - 1);
                 default_card[MAX_LINE_LENGTH] = '\0'; // Ensure null-termination
 
-                printf("Captured value: %s\n", default_card);
+                //printf("Captured value: %s\n", default_card);
                 free(result); // Free the dynamically allocated memory
             } else {
-                printf("No match found\n");
+                printf("No match found for default card \n"); // error no default card provided in config
                 // default_card[0] = '\0'; // Clear the global array if no match is found
             }
-        }
-
-        if (strncmp(buffer, "enforce_min", strlen("enforce_min")) == 0) {
-            enforce_min = parse_boolean(buffer);
-        }
-
-        if (strncmp(buffer, "enforce_max", strlen("enforce_max")) == 0) {
-            enforce_max = parse_boolean(buffer);
         }
 
         if (strncmp(buffer, "partition", strlen("partition")) == 0) {
@@ -193,26 +153,42 @@ void read_config(const char *filename) {
                 strncpy(partition, result, MAX_LINE_LENGTH - 1);
                 partition[MAX_LINE_LENGTH] = '\0'; // Ensure null-termination
 
-                printf("Captured value: %s\n", default_card);
+                //printf("Captured value: %s\n", default_card);
                 free(result); // Free the dynamically allocated memory
             } else {
-                printf("No match found\n");
+                printf("No match found for partition\n");
                 // default_card[0] = '\0'; // Clear the global array if no match is found
+            }
+
+        if (strncmp(buffer, "card.", strlen("card.")) == 0) {
+            char *result = parse_string(buffer);
+
+            if (result) {
+                // Ensure the result fits in the global array
+                char temp_ratio = parse_string(buffer);
+                double dub_ratio = strtod(temp_ratio, NULL)
+
+                strcpy(entries[num_entries].name, p);
+                entries[num_entries].ratio = dub_ratio;
+
+                //printf("Captured value: %s\n", default_card);
+                free(result); // Free the dynamically allocated memory
+            } else {
+                printf("No match found for %s \n", buffer);
+                // default_card[0] = '\0'; // Clear the global array if no match is found
+                }
             }
         }
     }
 
     /* Free up space */
-    free(buffer);
+    //free(buffer);
     fclose(file);
 }
 
 void print_config() {
     printf("disabled: %d\n", disabled);    
-    printf("enforce_ratio: %d\n", enforce_ratio);
     printf("default_card: %s\n", default_card);
-    printf("enforce_min: %d\n", enforce_min);
-    printf("enforce_max: %d\n", enforce_max);
     printf("partition: %s\n", partition);
 }
 
