@@ -10,6 +10,8 @@
 #define SECTION "[gresratio]"
 #define ENABLED_PATTERN "=\\s*true\\b"
 #define DISABLED_PATTERN "=\\s*false\\b"
+#define EQUALS_PATTERN "=[ \t]*([a-zA-Z0-9.]+)"
+#define NAME_PATTERN "card\.([a-zA-Z0-9]+)"
 
 int disabled = 1; // defaults to Enabled or 1
 
@@ -20,7 +22,7 @@ char partition[MAX_LINE_LENGTH] = "asdf";
 /* Card data structure */
 struct card {
   char name[MAX_LINE_LENGTH];
-  float ratio[MAX_LINE_LENGTH];
+  double ratio;
 };
 
 /* Card information array */
@@ -56,9 +58,8 @@ int parse_boolean(const char *line) {
 }
 
 /* Parses a string after an equals sign. Ex partition = es1 -> es1*/
-char* parse_string(const char *line) {
+char* parse_string(const char *line, const char *pattern) {
     // const char *pattern = "=\\ *([^\\ ]+)";
-    const char *pattern = "=[ \t]*([a-zA-Z0-9]+)";
     regex_t regex;
     regmatch_t match[2]; // Array to hold match positions
 
@@ -125,12 +126,12 @@ void read_config(const char *filename) {
                 //printf("Accepting Job\n");
                 disabled = 0;
                 break;
+                }
             }
-        }
 
         if (strncmp(buffer, "default_card", strlen("default_card")) == 0) {
             // default_card = parse_string(buffer);
-            char *result = parse_string(buffer);
+            char *result = parse_string(buffer, EQUALS_PATTERN);
 
             if (result) {
                 // Ensure the result fits in the global array
@@ -142,11 +143,11 @@ void read_config(const char *filename) {
             } else {
                 printf("No match found for default card \n"); // error no default card provided in config
                 // default_card[0] = '\0'; // Clear the global array if no match is found
+                }
             }
-        }
 
         if (strncmp(buffer, "partition", strlen("partition")) == 0) {
-            char *result = parse_string(buffer);
+            char *result = parse_string(buffer, EQUALS_PATTERN);
 
             if (result) {
                 // Ensure the result fits in the global array
@@ -158,38 +159,39 @@ void read_config(const char *filename) {
             } else {
                 printf("No match found for partition\n");
                 // default_card[0] = '\0'; // Clear the global array if no match is found
+                }
             }
 
         if (strncmp(buffer, "card.", strlen("card.")) == 0) {
-            char *result = parse_string(buffer);
+            char *result = parse_string(buffer, EQUALS_PATTERN);
+            char *name = parse_string(buffer, NAME_PATTERN);
 
-            if (result) {
+            if (result && name) {
                 // Ensure the result fits in the global array
-                char temp_ratio = parse_string(buffer);
-                double dub_ratio = strtod(temp_ratio, NULL)
-
-                strcpy(entries[num_entries].name, p);
-                entries[num_entries].ratio = dub_ratio;
-
-                //printf("Captured value: %s\n", default_card);
-                free(result); // Free the dynamically allocated memory
+                double dub_ratio = strtod(result, NULL);
+                entries[num_entries].ratio = dub_ratio; 
+                strcpy(entries[num_entries].name, name);
+                free(result);
+                num_entries += 1;
             } else {
                 printf("No match found for %s \n", buffer);
-                // default_card[0] = '\0'; // Clear the global array if no match is found
+
                 }
             }
         }
     }
 
-    /* Free up space */
-    //free(buffer);
-    fclose(file);
-}
 
 void print_config() {
     printf("disabled: %d\n", disabled);    
     printf("default_card: %s\n", default_card);
     printf("partition: %s\n", partition);
+
+    for (int i = 0; i < num_entries; i++) {
+        printf("Card Name: %s, Ratio: %f\n", entries[i].name, entries[i].ratio);
+    }
+
+    /* for card in entries: print card.name and card.ratio*/
 }
 
 int main() { //(int argc, char *argv[])
