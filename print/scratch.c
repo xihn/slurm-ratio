@@ -8,16 +8,16 @@
 #define MAX_ENTRIES 20
 #define SWITCH "enable_gres_ratio_plugin"
 #define SECTION "[gresratio]"
-#define ENABLED_PATTERN "=\\s*true\\b"
-#define DISABLED_PATTERN "=\\s*false\\b"
+#define ENABLED_PATTERN "=[ \t]*(true)"
+// #define DISABLED_PATTERN "=\\s*false\\b"
 #define EQUALS_PATTERN "=[ \t]*([a-zA-Z0-9.]+)"
 #define NAME_PATTERN "card\.([a-zA-Z0-9]+)"
 
-int disabled = 1; // defaults to Enabled or 1
+int disabled = 0; // defaults to false or 0 or disabled
 
 /*  Config variables default values, updated when config is loaded */
-char default_card[MAX_LINE_LENGTH] = "asdf";
-char partition[MAX_LINE_LENGTH] = "asdf";
+char default_card[MAX_LINE_LENGTH] = "V100";
+char partition[MAX_LINE_LENGTH] = "example";
 
 /* Card data structure */
 struct card {
@@ -122,9 +122,9 @@ void read_config(const char *filename) {
     while (fgets(buffer, BUFFER_SIZE, file) != NULL) {
         if (strncmp(buffer, SWITCH, strlen(SWITCH)) == 0) {
             /* If enableGresRatioPlugin is False then accept job*/
-            if(parse_boolean(buffer) == 0) {
+            if(parse_boolean(buffer) == 1) {
                 //printf("Accepting Job\n");
-                disabled = 0;
+                disabled = 1;
                 break;
                 }
             }
