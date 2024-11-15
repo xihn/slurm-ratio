@@ -151,7 +151,7 @@ void read_config_file(const char *filename) {
     if (fgets(line, sizeof(line), file)) {
       _update_config(line);
     } else {
-      info("Error reading config file or file has less than 5 lines.\n");
+      info("Error reading config file");
       fclose(file);
       return;
     }
