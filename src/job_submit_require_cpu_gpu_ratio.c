@@ -27,11 +27,15 @@ job_submit_require_cpu_gpu_ratio.c
 #include <slurm/slurm_errno.h>
 #include "src/slurmctld/slurmctld.h"
 
-#define MAX_LINE_LENGTH 256
-#define MAX_ENTRIES 50
-#define MAX_MATCHES 10
-#define MAX_GROUPS 2
-#define MAX_LINE_LENGTH 256
+#define BUFFER_SIZE 2048
+#define MAX_LINE_LENGTH 40
+#define MAX_ENTRIES 20
+#define SWITCH "enable_gres_ratio_plugin"
+#define SECTION "[gresratio]"
+#define ENABLED_PATTERN "=[ \t]*(true)"
+// #define DISABLED_PATTERN "=\\s*false\\b"
+#define EQUALS_PATTERN "=[ \t]*([a-zA-Z0-9.]+)"
+#define NAME_PATTERN "card\\.([a-zA-Z0-9]+)"
 
 /* Required by Slurm job_submit plugin interface. */
 const char plugin_name[] = "Require CPU/GPU ratio";
@@ -40,31 +44,19 @@ const uint32_t plugin_version = SLURM_VERSION_NUMBER;
 
 /* Global variables. */
 const char *myname = "job_submit_require_cpu_gpu_ratio";      // slurm requires?
-const char *gpu_regex = "^gpu:[_[:alnum:]:]*([[:digit:]]+)$"; // regex for gpu
-FILE *file;  // config file reader
-char line[MAX_LINE_LENGTH];  // not sure if this is how you do things 
-char search_name[MAX_LINE_LENGTH];
-
-/* Global vars that should / can be modified dependeing on implementation */
+int disabled = 0; // defaults to false or 0 or disabled
+char default_card[MAX_LINE_LENGTH] = "V100";
+char partition[MAX_LINE_LENGTH] = "es1";
 const int npart = 1; // number of partitions to check
-const int ratio = 2; // ratio required
-const char *config_file = "job_submit_ratio_config.yml"; // name of config file
-
-/*  Config variables default values, updated when config is loaded*/
-int enforce_ratio = 0;
-int enforce_min = 0;
-int enforce_max = 0;
-char default_card[20] = "V100";
-char partition[20] = "es1";
+const char *config_file = "job_submit_ratio_config.toml"; // name of config file
 
 /* Card data structure */
 struct card {
   char name[MAX_LINE_LENGTH];
-  int min;
-  int max;
-  char weight[MAX_LINE_LENGTH];
+  float ratio;
 };
 
+/* Card information array */
 struct card entries[MAX_ENTRIES];
 int num_entries = 0;
 
@@ -84,224 +76,230 @@ int _str2int(char *str, uint32_t *p2int) {
   return 0;
 }
 
-// Function to parse a line containing JSON-like object
-void _parse_line(char *line) {
-  if (num_entries >= MAX_ENTRIES) {
-    info("Max entries exceeded\n");
-    return;
-  }
+/* Parses a line for a boolean value after an equals sign. ex: example = false -> 0 */
+int parse_boolean(const char *line) {
+    regex_t regex;
+    int ret;
+    ret = regcomp(&regex, ENABLED_PATTERN, REG_EXTENDED | REG_ICASE);
 
-  // Parse the line assuming fixed format
-  if (sscanf(line,
-             "{\"name\":\"%[^\"]\", \"min\":%d, \"max\":%d, "
-             "\"weight\":\"%[^\"]\"}",
-             entries[num_entries].name, &entries[num_entries].min,
-             &entries[num_entries].max, entries[num_entries].weight) == 4) {
-    num_entries++;
-  } else {
-    info("Error parsing line: %s\n", line);
-  }
-}
-
-// Function to search for an entry by name
-struct card *find_entry(const char *name) {
-  for (int i = 0; i < num_entries; ++i) {
-    if (strcmp(entries[i].name, name) == 0) {
-      return &entries[i];
+    if (ret) {
+        fprintf(stderr, "Could not compile regex\n");
+        return EXIT_FAILURE; // ESLURM_INTERNAL
     }
-  }
-  return NULL; // Card not found
-}
 
-/* Parses the first 5 lines of the config for the settings */
-void _update_config(const char *line) {
-  // Use strtok to split the line on the colon
-  char key[50];
-  char value[50];
-  sscanf(line, "%[^:]:%s", key, value);
-
-  // Compare the key and update the corresponding variable
-  if (strcmp(key, "enforce_ratio") == 0) {
-    enforce_ratio = (strcmp(value, "True") == 0) ? 1 : 0;
-  } else if (strcmp(key, "default_card") == 0) {
-    strncpy(default_card, value, sizeof(default_card) - 1);
-    default_card[sizeof(default_card) - 1] = '\0'; // Ensure null-termination
-  } else if (strcmp(key, "enforce_min") == 0) {
-    enforce_min = (strcmp(value, "True") == 0) ? 1 : 0;
-  } else if (strcmp(key, "enforce_max") == 0) {
-    enforce_max = (strcmp(value, "True") == 0) ? 1 : 0;
-  } else if (strcmp(key, "partition") == 0) {
-    strncpy(partition, value, sizeof(partition) - 1);
-    partition[sizeof(partition) - 1] = '\0'; // Ensure null-termination
-  }
-}
-
-/* Main function for parsing the config file*/
-void read_config_file(const char *filename) {
-
-  // Open the file
-  file = fopen(filename, "r");
-  if (file == NULL) {
-    info("Error opening config file");
-    return;
-  }
-
-  // Skip and parse the first 5 lines, update config global vars
-  for (int i = 0; i < 5; ++i) {
-    if (fgets(line, sizeof(line), file)) {
-      _update_config(line);
+    ret = regexec(&regex, line, 0, NULL, 0);
+    if (!ret) {
+        //printf("true\n"); // Match found
+        return 0; // False
+    } else if (ret == REG_NOMATCH) {
+        //printf("asdf : False\n"); // No match
+        return 1; // True
     } else {
-      info("Error reading config file");
-      fclose(file);
-      return;
+        char msgbuf[100];
+        regerror(ret, &regex, msgbuf, sizeof(msgbuf));
+        fprintf(stderr, "Regex match failed: %s\n", msgbuf);
+        regfree(&regex);
+        return EXIT_FAILURE; // ESLURM_INTERNAL
     }
-  }
-
-  // Read each line and parse
-  while (fgets(line, sizeof(line), file)) {
-    // Remove newline character if present
-    line[strcspn(line, "\n")] = 0;
-    _parse_line(line);
-  }
-
-  // Close the file
-  fclose(file);
+    regfree(&regex);
 }
 
-/* Gets the card name from gres */
-int capture_card(const char *input, char *alphanumeric) {
-  regex_t regex;
-  regmatch_t matches[MAX_MATCHES];
-  char pattern[] = "^gpu:([[:alnum:]]+):([[:digit:]]+)$";
-  int ret;
+/* Parses a string after an equals sign. Ex partition = es1 -> es1*/
+char* parse_string(const char *line, const char *pattern) {
+    // const char *pattern = "=\\ *([^\\ ]+)";
+    regex_t regex;
+    regmatch_t match[2]; // Array to hold match positions
 
-  // Compile the regex pattern
-  ret = regcomp(&regex, pattern, REG_EXTENDED);
-  if (ret != 0) {
-    info("Failed to compile regex pattern\n");
-    return -1;
-  }
+    // Compile the regex
+    int reti = regcomp(&regex, pattern, REG_EXTENDED);
+    if (reti) {
+        fprintf(stderr, "Could not compile regex\n");
+        return NULL;
+    }
 
-  // Execute the regex search
-  ret = regexec(&regex, input, MAX_MATCHES, matches, 0);
-  if (ret == 0 && matches[1].rm_so != -1) {
-    // Match found, extract the alphanumeric part
-    int length = matches[1].rm_eo - matches[1].rm_so;
-    strncpy(alphanumeric, input + matches[1].rm_so, length);
-    alphanumeric[length] = '\0'; // Null-terminate the string
-    regfree(&regex);             // Free allocated memory for regex
-    return 0;
-  } else if (ret == REG_NOMATCH) {
-    regfree(&regex); // Free allocated memory for regex
-    return -1;       // No match found
-  } else {
-    char errbuf[100];
-    regerror(ret, &regex, errbuf, sizeof(errbuf));
-    info("Regex match failed: %s\n", errbuf);
-    regfree(&regex); // Free allocated memory for regex
-    return -1;
-  }
+    // Execute the regex
+    reti = regexec(&regex, line, 2, match, 0);
+    if (!reti) {
+        // Extract the matched substring
+        int start = match[1].rm_so;
+        int end = match[1].rm_eo;
+        int length = end - start;
+
+        // Allocate memory for the captured value
+        char *value = malloc(length + 1);
+        if (value == NULL) {
+            fprintf(stderr, "Memory allocation failed\n");
+            regfree(&regex);
+            return NULL;
+        }
+
+        strncpy(value, &line[start], length);
+        value[length] = '\0'; // Null-terminate the string
+
+        // Free memory allocated to the pattern buffer by regcomp()
+        regfree(&regex);
+
+        return value; // Return the captured value
+    } else if (reti == REG_NOMATCH) {
+        regfree(&regex);
+        return NULL; // No match found
+    } else {
+        char errbuf[100];
+        regerror(reti, &regex, errbuf, sizeof(errbuf));
+        fprintf(stderr, "Regex match failed: %s\n", errbuf);
+        regfree(&regex);
+        return NULL;
+    }
+}
+
+
+void read_config(const char *filename) {
+    FILE *file = fopen(filename, "r");
+    if (file == NULL) {
+        perror("Error opening file");
+        exit(0); 
+    }
+
+    char *buffer = malloc(BUFFER_SIZE);
+    if (buffer == NULL) {
+        perror("Error allocating memory");
+        fclose(file);
+        exit(0);
+    }
+
+    while (fgets(buffer, BUFFER_SIZE, file) != NULL) {
+        if (strncmp(buffer, SWITCH, strlen(SWITCH)) == 0) {
+            /* If enableGresRatioPlugin is False then accept job*/
+            if(parse_boolean(buffer) == 1) {
+                //printf("Accepting Job\n");
+                disabled = 1;
+                break;
+                }
+            }
+
+        if (strncmp(buffer, "default_card", strlen("default_card")) == 0) {
+            // default_card = parse_string(buffer);
+            char *result = parse_string(buffer, EQUALS_PATTERN);
+
+            if (result) {
+                // Ensure the result fits in the global array
+                strncpy(default_card, result, MAX_LINE_LENGTH - 1);
+                default_card[MAX_LINE_LENGTH] = '\0'; // Ensure null-termination
+
+                //printf("Captured value: %s\n", default_card);
+                free(result); // Free the dynamically allocated memory
+            } else {
+                printf("No match found for default card \n"); // error no default card provided in config
+                // default_card[0] = '\0'; // Clear the global array if no match is found
+                }
+            }
+
+        if (strncmp(buffer, "partition", strlen("partition")) == 0) {
+            char *result = parse_string(buffer, EQUALS_PATTERN);
+
+            if (result) {
+                // Ensure the result fits in the global array
+                strncpy(partition, result, MAX_LINE_LENGTH - 1);
+                partition[MAX_LINE_LENGTH] = '\0'; // Ensure null-termination
+
+                //printf("Captured value: %s\n", default_card);
+                free(result); // Free the dynamically allocated memory
+            } else {
+                printf("No match found for partition\n");
+                // default_card[0] = '\0'; // Clear the global array if no match is found
+                }
+            }
+
+        if (strncmp(buffer, "card.", strlen("card.")) == 0) {
+            char *result = parse_string(buffer, EQUALS_PATTERN);
+            char *name = parse_string(buffer, NAME_PATTERN);
+
+            if (result && name) {
+                // Ensure the result fits in the global array
+                float dub_ratio = strtof(result, NULL);
+                entries[num_entries].ratio = dub_ratio; 
+                strcpy(entries[num_entries].name, name);
+                free(result);
+                num_entries += 1;
+            } else {
+                printf("No match found for %s \n", buffer);
+
+                }
+            }
+        }
+    }
+
+/* Function to find the index of a card by name in entries */
+int find_card_index(const char *card_name) {
+    for (int i = 0; i < num_entries; i++) {
+        if (strcasecmp(entries[i].name, card_name) == 0) {
+            return i;
+        }
+    }
+    return -1; // Card not found
 }
 
 /* Main function */
 int _check_ratio(char *part, char *gres, uint32_t ncpu) {
-  if (part == NULL) {
-    info("%s: missed partition info", myname);
-    return SLURM_SUCCESS;
-  }
-
-  /* Loop through all partitions that need to be checked. */
-  int i;
-  for (i = 0; i < npart; i++) {
-    if (strcmp(part, &partition[i * sizeof(partition)]) == 0) {
-      /* Require GRES on a GRES partition. */
-      if (gres == NULL) {
-        info("%s: missed GRES on partition %s", myname, &partition[i]);
-        return ESLURM_INVALID_GRES;
-      } else {
-        regex_t re;
-        regmatch_t rm[2];
-
-        /* Number of GPUs. */
-        uint32_t ngpu = 0;
-
-        if (regcomp(&re, gpu_regex, REG_EXTENDED) != 0) {
-          info("%s: failed to compile regex '%s': %m", myname, gpu_regex);
-          return ESLURM_INTERNAL;
-        }
-
-        int rv = regexec(&re, gres, 2, rm, 0);
-
-        regfree(&re);
-
-        if (rv == 0) { /* match */
-            /* Convert the GPU # to integer. */
-            if (_str2int(gres + rm[1].rm_so, &ngpu) || ngpu < 1) {
-                info("%s: invalid GPU number %s", myname, gres + rm[1].rm_so);
-                return ESLURM_INVALID_GRES;
-            }
-
-            /* Vars */
-            char card_name[MAX_LINE_LENGTH];
-
-            // sets card_name to whatever it finds from gres or default
-            if (capture_card(gres, card_name) == 0) {
-
-                //info("matched card name: %s\n", card_name);
-            } else { // set default card
-                strncpy(card_name, default_card, sizeof(card_name) - 1);
-                card_name[sizeof(card_name) - 1] = '\0'; // Ensure null-termination
-
-                //info("Assuming Default card since no card was specified.\n");
-            }
-
-            struct card *found_entry = find_entry(card_name);
-            if (found_entry != NULL) {
-            // Print the found card details
-            // printf("Name: %s, Min: %d, Max: %d, Weight: %s\n", found_entry->name, found_entry->min, found_entry->max, found_entry->weight);
-
-                /* Enforce minimum cpu requirements*/
-                if (enforce_min) {
-                    if (ncpu < found_entry->min * ngpu) {
-                        info("Cpu for %s lower than min %d per card", found_entry->name, found_entry->min);
-                        return ESLURM_INVALID_GRES;
-                    }
-                }
-
-                /* Enforce maximum cpu requirements*/
-                if (enforce_max) {
-                    if (ncpu > found_entry->max * ngpu) {
-                        info("Cpu for %s higher than max %d per card", found_entry->name, found_entry->max);
-                        return ESLURM_INVALID_GRES;
-                    }
-                }
-
-                /* Enforce ratio*/
-                if (enforce_ratio) {
-                    int weight_int = atoi(found_entry->weight);
-                    if (((double) ncpu / (ngpu * weight_int)) < (double) ratio) {
-                        info("Ratio of %.2f is lower than %d , job does not qualify", (double) ncpu / (ngpu * weight_int), ratio);
-                        return ESLURM_INVALID_GRES;
-                    }
-                }
-
-          } else if (found_entry == NULL) {
-            info("Card with name '%s' not found in config.\n", search_name);
-            return ESLURM_INVALID_GRES;
-          }
-
-        } else if (rv == REG_NOMATCH) { /* no match */
-          info("%s: missed GPU on partition %s", myname, &partition[i]);
-          return ESLURM_INVALID_GRES;
-        } else { /* error */
-          info("%s: failed to match regex '%s': %m", myname, gpu_regex);
-          return ESLURM_INTERNAL;
-        }
-      }
+    if (part == NULL) {
+        info("%s: missed partition info", myname);
+        return SLURM_SUCCESS;
     }
-  }
+
+    const int npart = 1; 
+
+
+    /* Loop through all partitions that need to be checked. */
+    int i;
+    for (i = 0; i < npart; i++) {
+        if (strcmp(part, &partition[i * sizeof(partition)]) == 0) {
+            /* Require GRES on a GRES partition. */
+            if (gres == NULL) {
+                info("%s: missed GRES on partition %s", myname, &partition[i]);
+                return ESLURM_INVALID_GRES;
+            } else {
+                char card_name[MAX_LINE_LENGTH];
+                int gpu_count;
+                /* Check char *gres to see if it has gpu:NUMBER or if it has gpu:NAME:NUMBER by counting ":" 
+                        if it has gpu:NUMBER then set 
+                
+                */
+                // Check if gres has a card name (format "gpu:name:x")
+                if (sscanf(gres, "gpu:%39[^:]:%d", card_name, &gpu_count) == 2) {
+                    // Format with card name found
+                } else if (sscanf(gres, "gpu:%d", &gpu_count) == 1) {
+                    // No card name, use default
+                    strncpy(card_name, default_card, MAX_LINE_LENGTH);
+                } else {
+                    info("%s: missed GRES of %s", myname, card_name);
+                    return ESLURM_INVALID_GRES;
+                }
+                
+                // Calculate the CPU-to-GPU ratio
+                float ratio = (float)ncpu / gpu_count;
+                
+                // Find the card index in entries
+                int index = find_card_index(card_name);
+                if (index == -1) {
+                    // Card not found in entries, handle error as needed
+                    info("%s: config does not contain values for card %s", myname, card_name);
+                    return SLURM_SUCCESS;
+                }
+                
+                // Compare ratios
+                if (ratio == entries[index].ratio) {
+                    info("Calculated ratio %f is equal than stored ratio %f. Job Accepted.\n", ratio, entries[index].ratio);
+                    return SLURM_SUCCESS; // False, calculated ratio is greater
+                } else {
+                    info("Calculated ratio %f is less than or more than stored ratio %f. Returning False.\n", ratio, entries[index].ratio);
+                    return ESLURM_INVALID_GRES; // True, calculated ratio is less than or equal
+                }
+            }   
+        }
+    }
   return SLURM_SUCCESS;
 }
+
 
 extern int job_submit(struct job_descriptor *job_desc, uint32_t submit_uid,
         char **err_msg) {
