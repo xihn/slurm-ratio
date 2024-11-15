@@ -1,0 +1,388 @@
+typedef struct job_descriptor {	/* For submit, allocate, and update requests */
+	char *account;		/* charge to specified account */
+	char *acctg_freq;	/* accounting polling intervals (seconds) */
+	char *admin_comment;	/* administrator's arbitrary comment (update only) */
+	char *alloc_node;	/* node making resource allocation request
+				 * NOTE: Normally set by slurm_submit* or
+				 * slurm_allocate* function */
+	uint16_t alloc_resp_port; /* port to send allocation confirmation to */
+	uint32_t alloc_sid;	/* local sid making resource allocation request
+				 * NOTE: Normally set by slurm_submit* or
+				 * slurm_allocate* function
+				 * NOTE: Also used for update flags, see
+				 * ALLOC_SID_* flags */
+	uint32_t argc;		/* number of arguments to the script */
+	char **argv;		/* arguments to the script */
+	char *array_inx;	/* job array index values */
+	bitstr_t *array_bitmap;	/* NOTE: Set by slurmctld */
+	char *batch_features;	/* features required for batch script's node */
+	time_t begin_time;	/* delay initiation until this time */
+	uint64_t bitflags;      /* bitflags */
+	char *burst_buffer;	/* burst buffer specifications */
+	char *clusters;		/* cluster names used for multi-cluster jobs */
+	char *cluster_features;	/* required cluster feature specification,
+				 * default NONE */
+	char *comment;		/* arbitrary comment */
+	uint16_t contiguous;	/* 1 if job requires contiguous nodes,
+				 * 0 otherwise,default=0 */
+	char *container;	/* OCI container bundle */
+	char *container_id;	/* OCI container ID */
+	uint16_t core_spec;	/* specialized core/thread count,
+				 * see CORE_SPEC_THREAD */
+	char *cpu_bind;		/* binding map for map/mask_cpu - This
+				 * currently does not matter to the
+				 * job allocation, setting this does
+				 * not do anything for steps. */
+	uint16_t cpu_bind_type;	/* see cpu_bind_type_t - This
+				 * currently does not matter to the
+				 * job allocation, setting this does
+				 * not do anything for steps. */
+	uint32_t cpu_freq_min;  /* Minimum cpu frequency  */
+	uint32_t cpu_freq_max;  /* Maximum cpu frequency  */
+	uint32_t cpu_freq_gov;  /* cpu frequency governor */
+	char *cpus_per_tres;	/* semicolon delimited list of TRES=# values */
+	void *crontab_entry;	/* really cron_entry_t */
+	time_t deadline;	/* deadline */
+	uint32_t delay_boot;	/* delay boot for desired node state */
+	char *dependency;	/* synchronize job execution with other jobs */
+	time_t end_time;	/* time by which job must complete, used for
+				 * job update only now, possible deadline
+				 * scheduling in the future */
+	char **environment;	/* environment variables to set for job,
+				 *  name=value pairs, one per line */
+	slurm_hash_t env_hash;  /* hash value of environment NO NOT PACK */
+	uint32_t env_size;	/* element count in environment */
+	char *exc_nodes;	/* comma separated list of nodes excluded
+				 * from job's allocation, default NONE */
+	char *extra;		/* Arbitrary string */
+	char *features;		/* required feature specification,
+				 * default NONE */
+	uint64_t fed_siblings_active; /* Bitmap of active fed sibling ids */
+	uint64_t fed_siblings_viable; /* Bitmap of viable fed sibling ids */
+	uint32_t group_id;	/* group to assume, if run as root. */
+	uint32_t het_job_offset; /* HetJob component offset */
+	void *id;		/* actually identity_t. DO NOT PACK */
+	uint16_t immediate;	/* 1 if allocate to run or fail immediately,
+				 * 0 if to be queued awaiting resources */
+	uint32_t job_id;	/* job ID, default set by Slurm */
+	char * job_id_str;      /* string representation of the jobid */
+	char *job_size_str;
+	uint16_t kill_on_node_fail; /* 1 if node failure to kill job,
+				     * 0 otherwise,default=1 */
+	char *licenses;		/* licenses required by the job */
+	char *licenses_tot;	/* total licenses required by the job included
+				 * from tres requests as well, NOT PACKED */
+	uint16_t mail_type;	/* see MAIL_JOB_ definitions above */
+	char *mail_user;	/* user to receive notification */
+	char *mcs_label;	/* mcs_label if mcs plugin in use */
+	char *mem_bind;		/* binding map for map/mask_cpu */
+	uint16_t mem_bind_type;	/* see mem_bind_type_t */
+	char *mem_per_tres;	/* semicolon delimited list of TRES=# values */
+	char *name;		/* name of the job, default "" */
+	char *network;		/* network use spec */
+	uint32_t nice;		/* requested priority change,
+				 * NICE_OFFSET == no change */
+	uint32_t num_tasks;	/* number of tasks to be started,
+				 * for batch only */
+	uint8_t open_mode;	/* out/err open mode truncate or append,
+				 * see OPEN_MODE_* */
+	char *origin_cluster;	/* cluster name that initiated the job. */
+	uint16_t other_port;	/* port to send various notification msg to */
+	uint8_t overcommit;	/* over subscribe resources, for batch only */
+	char *partition;	/* name of requested partition,
+				 * default in Slurm config */
+	uint16_t plane_size;	/* plane size when task_dist =
+				   SLURM_DIST_PLANE */
+	char *prefer;		/* soft feature specification,
+				 * default NONE */
+	uint32_t priority;	/* relative priority of the job,
+				 * explicitly set only for user root,
+				 * 0 == held (don't initiate) */
+	uint32_t profile;	/* Level of acct_gather_profile {all | none} */
+	char *qos;		/* Quality of Service */
+	uint16_t reboot;	/* force node reboot before startup */
+	char *resp_host;	/* NOTE: Set by slurmctld */
+	uint16_t restart_cnt;	/* count of job restarts */
+	char *req_nodes;	/* comma separated list of required nodes
+				 * default NONE */
+	uint16_t requeue;	/* enable or disable job requeue option */
+	char *reservation;	/* name of reservation to use */
+	uint16_t resv_port_cnt;	/* count of MPI ports reserved per node */
+	char *script;		/* the actual job script, default NONE */
+	void *script_buf;	/* job script as mmap buf */
+	slurm_hash_t script_hash; /* hash value of script NO NOT PACK */
+	uint16_t shared;	/* 2 if the job can only share nodes with other
+				 *   jobs owned by that user,
+				 * 1 if job can share nodes with other jobs,
+				 * 0 if job needs exclusive access to the node,
+				 * or NO_VAL to accept the system default.
+				 * SHARED_FORCE to eliminate user control. */
+	uint32_t site_factor;	/* factor to consider in priority */
+	char **spank_job_env;	/* environment variables for job prolog/epilog
+				 * scripts as set by SPANK plugins */
+	uint32_t spank_job_env_size; /* element count in spank_env */
+	char *submit_line;      /* The command issued with all it's options in a
+				 * strintypedef struct job_descriptor {	/* For submit, allocate, and update requests */
+	char *account;		/* charge to specified account */
+	char *acctg_freq;	/* accounting polling intervals (seconds) */
+	char *admin_comment;	/* administrator's arbitrary comment (update only) */
+	char *alloc_node;	/* node making resource allocation request
+				 * NOTE: Normally set by slurm_submit* or
+				 * slurm_allocate* function */
+	uint16_t alloc_resp_port; /* port to send allocation confirmation to */
+	uint32_t alloc_sid;	/* local sid making resource allocation request
+				 * NOTE: Normally set by slurm_submit* or
+				 * slurm_allocate* function
+				 * NOTE: Also used for update flags, see
+				 * ALLOC_SID_* flags */
+	uint32_t argc;		/* number of arguments to the script */
+	char **argv;		/* arguments to the script */
+	char *array_inx;	/* job array index values */
+	bitstr_t *array_bitmap;	/* NOTE: Set by slurmctld */
+	char *batch_features;	/* features required for batch script's node */
+	time_t begin_time;	/* delay initiation until this time */
+	uint64_t bitflags;      /* bitflags */
+	char *burst_buffer;	/* burst buffer specifications */
+	char *clusters;		/* cluster names used for multi-cluster jobs */
+	char *cluster_features;	/* required cluster feature specification,
+				 * default NONE */
+	char *comment;		/* arbitrary comment */
+	uint16_t contiguous;	/* 1 if job requires contiguous nodes,
+				 * 0 otherwise,default=0 */
+	char *container;	/* OCI container bundle */
+	char *container_id;	/* OCI container ID */
+	uint16_t core_spec;	/* specialized core/thread count,
+				 * see CORE_SPEC_THREAD */
+	char *cpu_bind;		/* binding map for map/mask_cpu - This
+				 * currently does not matter to the
+				 * job allocation, setting this does
+				 * not do anything for steps. */
+	uint16_t cpu_bind_type;	/* see cpu_bind_type_t - This
+				 * currently does not matter to the
+				 * job allocation, setting this does
+				 * not do anything for steps. */
+	uint32_t cpu_freq_min;  /* Minimum cpu frequency  */
+	uint32_t cpu_freq_max;  /* Maximum cpu frequency  */
+	uint32_t cpu_freq_gov;  /* cpu frequency governor */
+	char *cpus_per_tres;	/* semicolon delimited list of TRES=# values */
+	void *crontab_entry;	/* really cron_entry_t */
+	time_t deadline;	/* deadline */
+	uint32_t delay_boot;	/* delay boot for desired node state */
+	char *dependency;	/* synchronize job execution with other jobs */
+	time_t end_time;	/* time by which job must complete, used for
+				 * job update only now, possible deadline
+				 * scheduling in the future */
+	char **environment;	/* environment variables to set for job,
+				 *  name=value pairs, one per line */
+	slurm_hash_t env_hash;  /* hash value of environment NO NOT PACK */
+	uint32_t env_size;	/* element count in environment */
+	char *exc_nodes;	/* comma separated list of nodes excluded
+				 * from job's allocation, default NONE */
+	char *extra;		/* Arbitrary string */
+	char *features;		/* required feature specification,
+				 * default NONE */
+	uint64_t fed_siblings_active; /* Bitmap of active fed sibling ids */
+	uint64_t fed_siblings_viable; /* Bitmap of viable fed sibling ids */
+	uint32_t group_id;	/* group to assume, if run as root. */
+	uint32_t het_job_offset; /* HetJob component offset */
+	void *id;		/* actually identity_t. DO NOT PACK */
+	uint16_t immediate;	/* 1 if allocate to run or fail immediately,
+				 * 0 if to be queued awaiting resources */
+	uint32_t job_id;	/* job ID, default set by Slurm */
+	char * job_id_str;      /* string representation of the jobid */
+	char *job_size_str;
+	uint16_t kill_on_node_fail; /* 1 if node failure to kill job,
+				     * 0 otherwise,default=1 */
+	char *licenses;		/* licenses required by the job */
+	char *licenses_tot;	/* total licenses required by the job included
+				 * from tres requests as well, NOT PACKED */
+	uint16_t mail_type;	/* see MAIL_JOB_ definitions above */
+	char *mail_user;	/* user to receive notification */
+	char *mcs_label;	/* mcs_label if mcs plugin in use */
+	char *mem_bind;		/* binding map for map/mask_cpu */
+	uint16_t mem_bind_type;	/* see mem_bind_type_t */
+	char *mem_per_tres;	/* semicolon delimited list of TRES=# values */
+	char *name;		/* name of the job, default "" */
+	char *network;		/* network use spec */
+	uint32_t nice;		/* requested priority change,
+				 * NICE_OFFSET == no change */
+	uint32_t num_tasks;	/* number of tasks to be started,
+				 * for batch only */
+	uint8_t open_mode;	/* out/err open mode truncate or append,
+				 * see OPEN_MODE_* */
+	char *origin_cluster;	/* cluster name that initiated the job. */
+	uint16_t other_port;	/* port to send various notification msg to */
+	uint8_t overcommit;	/* over subscribe resources, for batch only */
+	char *partition;	/* name of requested partition,
+				 * default in Slurm config */
+	uint16_t plane_size;	/* plane size when task_dist =
+				   SLURM_DIST_PLANE */
+	char *prefer;		/* soft feature specification,
+				 * default NONE */
+	uint32_t priority;	/* relative priority of the job,
+				 * explicitly set only for user root,
+				 * 0 == held (don't initiate) */
+	uint32_t profile;	/* Level of acct_gather_profile {all | none} */
+	char *qos;		/* Quality of Service */
+	uint16_t reboot;	/* force node reboot before startup */
+	char *resp_host;	/* NOTE: Set by slurmctld */
+	uint16_t restart_cnt;	/* count of job restarts */
+	char *req_nodes;	/* comma separated list of required nodes
+				 * default NONE */
+	uint16_t requeue;	/* enable or disable job requeue option */
+	char *reservation;	/* name of reservation to use */
+	uint16_t resv_port_cnt;	/* count of MPI ports reserved per node */
+	char *script;		/* the actual job script, default NONE */
+	void *script_buf;	/* job script as mmap buf */
+	slurm_hash_t script_hash; /* hash value of script NO NOT PACK */
+	uint16_t shared;	/* 2 if the job can only share nodes with other
+				 *   jobs owned by that user,
+				 * 1 if job can share nodes with other jobs,
+				 * 0 if job needs exclusive access to the node,
+				 * or NO_VAL to accept the system default.
+				 * SHARED_FORCE to eliminate user control. */
+	uint32_t site_factor;	/* factor to consider in priority */
+	char **spank_job_env;	/* environment variables for job prolog/epilog
+				 * scripts as set by SPANK plugins */
+	uint32_t spank_job_env_size; /* element count in spank_env */
+	char *submit_line;      /* The command issued with all it's options in a
+				 * string */
+	uint32_t task_dist;	/* see enum task_dist_state */
+	uint32_t time_limit;	/* maximum run time in minutes, default is
+				 * partition limit */
+	uint32_t time_min;	/* minimum run time in minutes, default is
+				 * time_limit */
+	char *tres_bind;	/* Task to TRES binding directives */
+	char *tres_freq;	/* TRES frequency directives */
+	char *tres_per_job;	/* semicolon delimited list of TRES=# values */
+	char *tres_per_node;	/* semicolon delimited list of TRES=# values */
+	char *tres_per_socket;	/* semicolon delimited list of TRES=# values */
+	char *tres_per_task;	/* semicolon delimited list of TRES=# values */
+	uint32_t user_id;	/* set only if different from current UID,
+				 * can only be explicitly set by user root */
+	uint16_t wait_all_nodes;/* 0 to start job immediately after allocation
+				 * 1 to start job after all nodes booted
+				 * or NO_VAL to use system default */
+	uint16_t warn_flags;	/* flags  related to job signals
+				 * (eg. KILL_JOB_BATCH) */
+	uint16_t warn_signal;	/* signal to send when approaching end time */
+	uint16_t warn_time;	/* time before end to send signal (seconds) */
+	char *work_dir;		/* pathname of working directory */
+
+	/* job constraints: */
+	uint16_t cpus_per_task;	/* number of processors required for
+				 * each task */
+	uint32_t min_cpus;	/* minimum number of processors required,
+				 * default=0 */
+	uint32_t max_cpus;	/* maximum number of processors required,
+				 * default=0 */
+	uint32_t min_nodes;	/* minimum number of nodes required by job,
+				 * default=0 */
+	uint32_t max_nodes;	/* maximum number of nodes usable by job,
+				 * default=0 */
+	uint16_t boards_per_node; /* boards per node required by job  */
+	uint16_t sockets_per_board;/* sockets per board required by job */
+	uint16_t sockets_per_node;/* sockets per node required by job */
+	uint16_t cores_per_socket;/* cores per socket required by job */
+	uint16_t threads_per_core;/* threads per core required by job */
+	uint16_t ntasks_per_node;/* number of tasks to invoke on each node */
+	uint16_t ntasks_per_socket;/* number of tasks to invoke on
+				    * each socket */
+	uint16_t ntasks_per_core;/* number of tasks to invoke on each core */
+	uint16_t ntasks_per_board;/* number of tasks to invoke on each board */
+	uint16_t ntasks_per_tres;/* number of tasks that can access each gpu */
+	uint16_t pn_min_cpus;    /* minimum # CPUs per node, default=0 */
+	uint64_t pn_min_memory;  /* minimum real memory per node OR
+				  * real memory per CPU | MEM_PER_CPU,
+				  * default=0 (no limit) */
+	uint32_t pn_min_tmp_disk;/* minimum tmp disk per node,
+				  * default=0 */
+	char *req_context;	/* requested selinux context */
+	uint32_t req_switch;    /* Maximum number of switches */
+	uint16_t segment_size;	/* segment_size */
+	char *selinux_context;	/* used internally in the slurmctld,
+				   DON'T PACK */
+	char *std_err;		/* pathname of stderr */
+	char *std_in;		/* pathname of stdin */
+	char *std_out;		/* pathname of stdout */
+	uint64_t *tres_req_cnt; /* used internally in the slurmctld,
+				   DON'T PACK */
+	uint32_t wait4switch;   /* Maximum time to wait for minimum switches */
+	char *wckey;            /* wckey for job */
+	uint16_t x11;		/* --x11 flags */
+	char *x11_magic_cookie;	/* automatically stolen from submit node */
+	char *x11_target;	/* target hostname, or unix socket if port == 0 */
+	uint16_t x11_target_port; /* target tcp port, 6000 + the display number */
+}
+
+
+
+ job_desc_msg_t;
+g */
+	uint32_t task_dist;	/* see enum task_dist_state */
+	uint32_t time_limit;	/* maximum run time in minutes, default is
+				 * partition limit */
+	uint32_t time_min;	/* minimum run time in minutes, default is
+				 * time_limit */
+	char *tres_bind;	/* Task to TRES binding directives */
+	char *tres_freq;	/* TRES frequency directives */
+	char *tres_per_job;	/* semicolon delimited list of TRES=# values */
+	char *tres_per_node;	/* semicolon delimited list of TRES=# values */
+	char *tres_per_socket;	/* semicolon delimited list of TRES=# values */
+	char *tres_per_task;	/* semicolon delimited list of TRES=# values */
+	uint32_t user_id;	/* set only if different from current UID,
+				 * can only be explicitly set by user root */
+	uint16_t wait_all_nodes;/* 0 to start job immediately after allocation
+				 * 1 to start job after all nodes booted
+				 * or NO_VAL to use system default */
+	uint16_t warn_flags;	/* flags  related to job signals
+				 * (eg. KILL_JOB_BATCH) */
+	uint16_t warn_signal;	/* signal to send when approaching end time */
+	uint16_t warn_time;	/* time before end to send signal (seconds) */
+	char *work_dir;		/* pathname of working directory */
+
+	/* job constraints: */
+	uint16_t cpus_per_task;	/* number of processors required for
+				 * each task */
+	uint32_t min_cpus;	/* minimum number of processors required,
+				 * default=0 */
+	uint32_t max_cpus;	/* maximum number of processors required,
+				 * default=0 */
+	uint32_t min_nodes;	/* minimum number of nodes required by job,
+				 * default=0 */
+	uint32_t max_nodes;	/* maximum number of nodes usable by job,
+				 * default=0 */
+	uint16_t boards_per_node; /* boards per node required by job  */
+	uint16_t sockets_per_board;/* sockets per board required by job */
+	uint16_t sockets_per_node;/* sockets per node required by job */
+	uint16_t cores_per_socket;/* cores per socket required by job */
+	uint16_t threads_per_core;/* threads per core required by job */
+	uint16_t ntasks_per_node;/* number of tasks to invoke on each node */
+	uint16_t ntasks_per_socket;/* number of tasks to invoke on
+				    * each socket */
+	uint16_t ntasks_per_core;/* number of tasks to invoke on each core */
+	uint16_t ntasks_per_board;/* number of tasks to invoke on each board */
+	uint16_t ntasks_per_tres;/* number of tasks that can access each gpu */
+	uint16_t pn_min_cpus;    /* minimum # CPUs per node, default=0 */
+	uint64_t pn_min_memory;  /* minimum real memory per node OR
+				  * real memory per CPU | MEM_PER_CPU,
+				  * default=0 (no limit) */
+	uint32_t pn_min_tmp_disk;/* minimum tmp disk per node,
+				  * default=0 */
+	char *req_context;	/* requested selinux context */
+	uint32_t req_switch;    /* Maximum number of switches */
+	uint16_t segment_size;	/* segment_size */
+	char *selinux_context;	/* used internally in the slurmctld,
+				   DON'T PACK */
+	char *std_err;		/* pathname of stderr */
+	char *std_in;		/* pathname of stdin */
+	char *std_out;		/* pathname of stdout */
+	uint64_t *tres_req_cnt; /* used internally in the slurmctld,
+				   DON'T PACK */
+	uint32_t wait4switch;   /* Maximum time to wait for minimum switches */
+	char *wckey;            /* wckey for job */
+	uint16_t x11;		/* --x11 flags */
+	char *x11_magic_cookie;	/* automatically stolen from submit node */
+	char *x11_target;	/* target hostname, or unix socket if port == 0 */
+	uint16_t x11_target_port; /* target tcp port, 6000 + the display number */
+} job_desc_msg_t;

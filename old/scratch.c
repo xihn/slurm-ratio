@@ -22,7 +22,7 @@ char partition[MAX_LINE_LENGTH] = "example";
 /* Card data structure */
 struct card {
   char name[MAX_LINE_LENGTH];
-  double ratio;
+  float ratio;
 };
 
 /* Card information array */
@@ -168,7 +168,7 @@ void read_config(const char *filename) {
 
             if (result && name) {
                 // Ensure the result fits in the global array
-                double dub_ratio = strtod(result, NULL);
+                float dub_ratio = strtof(result, NULL);
                 entries[num_entries].ratio = dub_ratio; 
                 strcpy(entries[num_entries].name, name);
                 free(result);

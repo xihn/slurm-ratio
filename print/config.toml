@@ -2,18 +2,18 @@
 enable_job_submit_plugin = true   # Requires Slurm restart
 enable_spank_plugin = true   # Does not require Slurm restart
 enable_job_complete_plugin = false  # Requires Slurm restart
-
 enable_gres_ratio_plugin = true # Does not require slurm restart
 
-[gresratio] # no comments allowed in this section
+# no comments in this section
+[gresratio] # comment test
 default_card = V100 # this MUST have a ratio defined below
-partition=es32 # only allows for one partition 
-exceptions= mhyeh
+partition = es1 # only allows for one partition 
 card.GTRX2080TI = 2.0
 card.V100 = 2.0
 card.A40 = 4.0
 card.A100 = 4.0
 card.H100 = 6.0
+
 
 # All partitions must be listed here.
 # If a job requests to use a partition that is not listed here,
