@@ -4,8 +4,9 @@ Job Submit plugin to enfornce the CPU/GPU ratio to facilitate accounting.
 
 ### Testing
 
-For testing without compiling slurm. `cd print` and run `gcc print.c`. Then run `./a.out "partition" "gpu:type:count" "cpu count"`
-For example `./a.out es1 gpu:A100:2 4`
+For testing without compiling slurm. 
+1. ```cd print``` and run ```gcc print.c```.
+2. ```./a.out "partition" "gpu:type:count" "cpu count"``` (ex: `./a.out es1 gpu:A100:2 4`)
 
 ### Configuration
  The config file accepts the following settings which must all be defined under `[gresratio]`
