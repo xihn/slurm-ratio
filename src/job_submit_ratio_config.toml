@@ -5,18 +5,15 @@ testest = false
 
 # random comment
 
-[gresratio] # no comments allowed below this line
-enforce_ratio=true
-default_card=V100
-enforce_min=true
-enforce_max=true
-partition=es1
+[gresratio] # comment test
+default_card = V100 # this MUST have a ratio defined below
+partition = es1 # only allows for one partition 
+card.GTRX2080TI = 2.0
+card.V100 = 2.0
+card.A40 = 4.0
+card.A100 = 4.0
+card.H100 = 6.0
 
-# Format for cards should be {name, min, max, multiplier}
-# read https://github.com/xihn/slurm-ratio before adding new cards
-card1 = {GRTX2080TI, 1, 2, 1.0}
-card2 = {V100, 2, 8, 1.0}
-card3 = {A40, 2, 16, 4.0}
 
 [loremipsum]
 blahblah = True
