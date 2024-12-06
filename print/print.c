@@ -263,7 +263,7 @@ int _check_ratio(char *part, char *gres, uint32_t ncpu) {
                 
                 // Compare ratios
                 if (are_floats_equal(ratio, entries[index].ratio, EPSILON)) {
-                    printf("Calculated ratio %f is equal than stored ratio %f. Returning True.\n", ratio, entries[index].ratio);
+                    printf("Calculated ratio %f is equal to stored ratio %f. Returning True.\n", ratio, entries[index].ratio);
                     return 1; // False, calculated ratio is greater
                 } else {
                     printf("Calculated ratio %f is less than or more than stored ratio %f. Returning False.\n", ratio, entries[index].ratio);

@@ -1,4 +1,4 @@
-job_submit_require_cpu_gpu_ratio.c
+// job_submit_require_cpu_gpu_ratio.c
 
 /* 
  * Copyright (c) 2016-2017, Miles Yeh <mhyeh@lbl.gov>. All rights reserved.
@@ -24,6 +24,9 @@ job_submit_require_cpu_gpu_ratio.c
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
+#include <stdbool.h>
+
 #include <slurm/slurm_errno.h>
 #include "src/slurmctld/slurmctld.h"
 
@@ -36,6 +39,7 @@ job_submit_require_cpu_gpu_ratio.c
 // #define DISABLED_PATTERN "=\\s*false\\b"
 #define EQUALS_PATTERN "=[ \t]*([a-zA-Z0-9.]+)"
 #define NAME_PATTERN "card\\.([a-zA-Z0-9]+)"
+#define EPSILON 1e-6
 
 /* Required by Slurm job_submit plugin interface. */
 const char plugin_name[] = "Require CPU/GPU ratio";
@@ -74,6 +78,10 @@ int _str2int(char *str, uint32_t *p2int) {
   *p2int = l;
 
   return 0;
+}
+
+bool are_floats_equal(float var1, float var2, float epsilon) {
+    return fabs(var1 - var2) < epsilon;
 }
 
 /* Parses a line for a boolean value after an equals sign. ex: example = false -> 0 */
@@ -287,7 +295,7 @@ int _check_ratio(char *part, char *gres, uint32_t ncpu) {
                 }
                 
                 // Compare ratios
-                if (ratio == entries[index].ratio) {
+                if (are_floats_equal(ratio, entries[index].ratio, EPSILON)) {
                     info("Calculated ratio %f is equal than stored ratio %f. Job Accepted.\n", ratio, entries[index].ratio);
                     return SLURM_SUCCESS; // False, calculated ratio is greater
                 } else {
