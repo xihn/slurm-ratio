@@ -40,27 +40,26 @@ int num_entries = 0;
 /* Parses a line for a boolean value after an equals sign. ex: example = false -> 0 */
 int parse_boolean(const char *line) {
     regex_t regex;
-    int ret;
-    ret = regcomp(&regex, ENABLED_PATTERN, REG_EXTENDED | REG_ICASE);
-
+    int ret = regcomp(&regex, ENABLED_PATTERN, REG_EXTENDED | REG_ICASE);
     if (ret) {
         fprintf(stderr, "Could not compile regex\n");
-        return EXIT_FAILURE; // ESLURM_INTERNAL
+        regfree(&regex); // Always free before returning
+        return EXIT_FAILURE;
     }
 
     ret = regexec(&regex, line, 0, NULL, 0);
     if (!ret) {
-        //printf("true\n"); // Match found
-        return 0; // False
+        regfree(&regex); // Free here
+        return 0;
     } else if (ret == REG_NOMATCH) {
-        //printf("asdf : False\n"); // No match
-        return 1; // True
+        regfree(&regex); // Free here
+        return 1;
     } else {
         char msgbuf[100];
         regerror(ret, &regex, msgbuf, sizeof(msgbuf));
         fprintf(stderr, "Regex match failed: %s\n", msgbuf);
-        regfree(&regex);
-        return EXIT_FAILURE; // ESLURM_INTERNAL
+        regfree(&regex); // Free here
+        return EXIT_FAILURE;
     }
     regfree(&regex);
 }
@@ -79,6 +78,7 @@ char* parse_string(const char *line, const char *pattern) {
     int reti = regcomp(&regex, pattern, REG_EXTENDED);
     if (reti) {
         fprintf(stderr, "Could not compile regex\n");
+        regfree(&regex);
         return NULL;
     }
 
@@ -155,6 +155,7 @@ void read_config(const char *filename) {
             } else {
                 printf("No match found for default card \n"); // error no default card provided in config
                 // default_card[0] = '\0'; // Clear the global array if no match is found
+                free(result);
                 }
             }
 
@@ -164,13 +165,14 @@ void read_config(const char *filename) {
             if (result) {
                 // Ensure the result fits in the global array
                 strncpy(partition, result, MAX_LINE_LENGTH - 1);
-                partition[MAX_LINE_LENGTH] = '\0'; // Ensure null-termination
+                partition[MAX_LINE_LENGTH] = '\0'; // null term
 
                 //printf("Captured value: %s\n", default_card);
-                free(result); // Free the dynamically allocated memory
+                free(result); 
             } else {
                 printf("No match found for partition\n");
-                // default_card[0] = '\0'; // Clear the global array if no match is found
+                // default_card[0] = '\0'; // Clear the glob array if no match is found
+                free(result);
                 }
             }
 
@@ -184,13 +186,18 @@ void read_config(const char *filename) {
                 entries[num_entries].ratio = dub_ratio; 
                 strcpy(entries[num_entries].name, name);
                 free(result);
+                free(name);
                 num_entries += 1;
             } else {
                 printf("No match found for %s \n", buffer);
-
+                free(result);
+                free(name);
                 }
             }
         }
+    
+    free(buffer);
+
     }
 
 void print_config() {
