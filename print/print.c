@@ -14,6 +14,7 @@
 // #define DISABLED_PATTERN "=\\s*false\\b"
 #define EQUALS_PATTERN "=[ \t]*([a-zA-Z0-9.]+)"
 #define NAME_PATTERN "card\\.([a-zA-Z0-9]+)"
+#define EPSILON 1e-6
 
 int disabled = 0; // defaults to false or 0 or disabled
 
@@ -255,7 +256,7 @@ int _check_ratio(char *part, char *gres, uint32_t ncpu) {
                 }
                 
                 // Compare ratios
-                if (ratio == entries[index].ratio) {
+                if (are_floats_equal(ratio, entries[index].ratio, EPSILON)) {
                     printf("Calculated ratio %f is equal than stored ratio %f. Returning True.\n", ratio, entries[index].ratio);
                     return 1; // False, calculated ratio is greater
                 } else {
