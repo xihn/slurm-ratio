@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
+#include <stdbool.h>
 
 #define BUFFER_SIZE 2048
 #define MAX_LINE_LENGTH 40
@@ -61,6 +63,10 @@ int parse_boolean(const char *line) {
         return EXIT_FAILURE; // ESLURM_INTERNAL
     }
     regfree(&regex);
+}
+
+bool are_floats_equal(float var1, float var2, float epsilon) {
+    return fabs(var1 - var2) < epsilon;
 }
 
 /* Parses a string after an equals sign. Ex partition = es1 -> es1*/
