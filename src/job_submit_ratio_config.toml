@@ -1,6 +1,6 @@
 [Enable] # comment
 testtest = false # comment asdf
-enable_gres_ratio_plugin = true # comment
+enable_gres_ratio_plugin = true
 testest = false
 
 # random comment
