@@ -263,7 +263,7 @@ int _check_ratio(char *part, char *gres, uint32_t ncpu) {
                     // Format with card name found
                     //prefix = " ";
                 } else if (sscanf(gres, "gpu:%d", &gpu_count) == 1) {
-                    asprintf(&prefix, "No GPU Specified, please specifiy which gpu when submitting jobs. (ex, V100) \n");
+                    prefix = "No GPU Specified, please specifiy which gpu when submitting jobs. (ex, V100) \n";
                     strncpy(card_name, default_card, MAX_LINE_LENGTH);
                 } else {
                     // Invalid format

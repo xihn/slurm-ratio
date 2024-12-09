@@ -247,7 +247,7 @@ int _check_ratio(char *part, char *gres, uint32_t ncpu, char **err_msg) {
     read_config(config_file);
 
     if (disabled == 1) {
-        info("Gres_Ratio plugin disabled");
+        info("%s: Gres_Ratio plugin disabled", myname);
         return SLURM_SUCCESS;
     }
 
@@ -278,7 +278,8 @@ int _check_ratio(char *part, char *gres, uint32_t ncpu, char **err_msg) {
                     // Format with card name found
                 } else if (sscanf(gres, "gpu:%d", &gpu_count) == 1) {
                     // No card name, use default
-                    asprintf(&prefix, "Warning: No GPU Specified, in the future specifiy which gpu when submitting jobs. (ex, V100) \n");
+                    info("%s: User did not specify gpu, assuming default gpu", myname, card_name);
+                    prefix = "No GPU Specified, please specifiy which gpu when submitting jobs. (ex, V100) \n";
                     strncpy(card_name, default_card, MAX_LINE_LENGTH);
                 } else {
                     info("%s: missed GRES of %s", myname, card_name);
@@ -298,7 +299,7 @@ int _check_ratio(char *part, char *gres, uint32_t ncpu, char **err_msg) {
                 
                 // Compare ratios
                 if (are_floats_equal(ratio, entries[index].ratio, EPSILON)) {\
-                    info("Calculated ratio %f is equal to stored ratio %f. Job Accepted.\n", ratio, entries[index].ratio);
+                    // info("Calculated ratio %f is equal to stored ratio %f. Job Accepted.\n", ratio, entries[index].ratio);
                     return SLURM_SUCCESS; // False, calculated ratio is greater
                 } else {
                     asprintf(&usrmsg, "%s Error: GPU/CPU ratio %f is less than or more than required ratio %f.\n",prefix, ratio, entries[index].ratio, );
