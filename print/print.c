@@ -261,7 +261,7 @@ int _check_ratio(char *part, char *gres, uint32_t ncpu, char** err_msg) {
                 // Check if gres has a card name (format "gpu:name:x")
                 if (sscanf(gres, "gpu:%39[^:]:%d", card_name, &gpu_count) == 2) {
                     // Format with card name found
-                    //prefix = " ";
+                    prefix = " ";
                 } else if (sscanf(gres, "gpu:%d", &gpu_count) == 1) {
                     prefix = "No GPU Specified, please specifiy which gpu when submitting jobs. (ex, V100) \n";
                     strncpy(card_name, default_card, MAX_LINE_LENGTH);
@@ -290,7 +290,7 @@ int _check_ratio(char *part, char *gres, uint32_t ncpu, char** err_msg) {
                     asprintf(&out, "%sGPU/CPU ratio %f is less than or more than required ratio %f.\n",prefix, ratio, entries[index].ratio);
                     printf(out);
                     *err_msg = out;
-                    free(prefix);
+                    free(out);
                     return 0; // True, calculated ratio is less than or equal
                 }
             }   

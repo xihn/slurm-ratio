@@ -276,6 +276,7 @@ int _check_ratio(char *part, char *gres, uint32_t ncpu, char **err_msg) {
                 // Check if gres has a card name (format "gpu:name:x")
                 if (sscanf(gres, "gpu:%39[^:]:%d", card_name, &gpu_count) == 2) {
                     // Format with card name found
+                    prefix = " "; // this sucks but eh
                 } else if (sscanf(gres, "gpu:%d", &gpu_count) == 1) {
                     // No card name, use default
                     info("%s: User did not specify gpu, assuming default gpu", myname, card_name);
