@@ -31,7 +31,7 @@
 #include "src/slurmctld/slurmctld.h"
 
 #define BUFFER_SIZE 2048
-#define MAX_LINE_LENGTH 40
+#define MAX_LINE_LENGTH 256
 #define MAX_ENTRIES 20
 #define SWITCH "enable_gres_ratio_plugin"
 #define SECTION "[gresratio]"
@@ -48,11 +48,13 @@ const uint32_t plugin_version = SLURM_VERSION_NUMBER;
 
 /* Global variables. */
 const char *myname = "job_submit_require_cpu_gpu_ratio";      // slurm requires?
-int disabled = 0; // defaults to false or 0 or disabled
+int disabled = 0; // defaults to false or 0 or enabled
 char default_card[MAX_LINE_LENGTH] = "V100";
 char partition[MAX_LINE_LENGTH] = "es1";
 const int npart = 1; // number of partitions to check
 const char *config_file = "job_submit_ratio_config.toml"; // name of config file
+char *usrmsg = NULL; //err message to user
+char *prefix; // For no gpu msg
 
 /* Card data structure */
 struct card {
@@ -240,17 +242,21 @@ int find_card_index(const char *card_name) {
 }
 
 /* Main function */
-int _check_ratio(char *part, char *gres, uint32_t ncpu) {
+int _check_ratio(char *part, char *gres, uint32_t ncpu, char **err_msg) {
 
     read_config(config_file);
+
+    if (disabled == 1) {
+        info("Gres_Ratio plugin disabled");
+        return SLURM_SUCCESS;
+    }
 
     if (part == NULL) {
         info("%s: missed partition info", myname);
         return SLURM_SUCCESS;
     }
 
-    const int npart = 1; 
-
+    const int npart = 1; // this was in the original, I assume since in the future there may be multiple partitions to check
 
     /* Loop through all partitions that need to be checked. */
     int i;
@@ -272,29 +278,32 @@ int _check_ratio(char *part, char *gres, uint32_t ncpu) {
                     // Format with card name found
                 } else if (sscanf(gres, "gpu:%d", &gpu_count) == 1) {
                     // No card name, use default
+                    asprintf(&prefix, "Warning: No GPU Specified, in the future specifiy which gpu when submitting jobs. (ex, V100) \n");
                     strncpy(card_name, default_card, MAX_LINE_LENGTH);
                 } else {
                     info("%s: missed GRES of %s", myname, card_name);
                     return ESLURM_INVALID_GRES;
                 }
                 
-                // Calculate the CPU-to-GPU ratio
+                // casting eh
                 float ratio = (float)ncpu / gpu_count;
                 
                 // Find the card index in entries
                 int index = find_card_index(card_name);
                 if (index == -1) {
-                    // Card not found in entries, handle error as needed
+                    // Card not found in entries
                     info("%s: config does not contain values for card %s", myname, card_name);
                     return SLURM_SUCCESS;
                 }
                 
                 // Compare ratios
-                if (are_floats_equal(ratio, entries[index].ratio, EPSILON)) {
-                    info("Calculated ratio %f is equal than stored ratio %f. Job Accepted.\n", ratio, entries[index].ratio);
+                if (are_floats_equal(ratio, entries[index].ratio, EPSILON)) {\
+                    info("Calculated ratio %f is equal to stored ratio %f. Job Accepted.\n", ratio, entries[index].ratio);
                     return SLURM_SUCCESS; // False, calculated ratio is greater
                 } else {
-                    info("Calculated ratio %f is less than or more than stored ratio %f. Returning False.\n", ratio, entries[index].ratio);
+                    asprintf(&usrmsg, "%s Error: GPU/CPU ratio %f is less than or more than required ratio %f.\n",prefix, ratio, entries[index].ratio, );
+                    *err_msg = usrmsg;
+                    // info("Calculated ratio %f is less than or more than stored ratio %f. Returning False.\n", ratio, entries[index].ratio);
                     return ESLURM_INVALID_GRES; // True, calculated ratio is less than or equal
                 }
             }   
@@ -308,7 +317,8 @@ extern int job_submit(struct job_descriptor *job_desc, uint32_t submit_uid,
         char **err_msg) {
     return _check_ratio(job_desc->partition,
                         job_desc->tres_per_node,
-                        job_desc->min_cpus);
+                        job_desc->min_cpus,
+                        err_msg);
 }
 
 extern int job_modify(struct job_descriptor *job_desc,

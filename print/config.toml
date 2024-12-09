@@ -2,7 +2,7 @@
 enable_job_submit_plugin = true   # Requires Slurm restart
 enable_spank_plugin = true   # Does not require Slurm restart
 enable_job_complete_plugin = false  # Requires Slurm restart
-enable_gres_ratio_plugin = true # Does not require slurm restart
+enable_gres_ratio_plugin = true
 
 # no comments in this section
 [gresratio] # comment test

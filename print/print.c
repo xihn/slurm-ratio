@@ -18,11 +18,13 @@
 #define NAME_PATTERN "card\\.([a-zA-Z0-9]+)"
 #define EPSILON 1e-6
 
-int disabled = 0; // defaults to false or 0 or disabled
+int disabled = 0; // defaults to false or 0 or enabled
 
 /*  Config variables default values, updated when config is loaded */
 char default_card[MAX_LINE_LENGTH] = "V100";
 char partition[MAX_LINE_LENGTH] = "example";
+char *out = NULL;
+char *prefix;
 
 /* Global variables. */
 const char *myname = "job_submit_require_cpu_gpu_ratio";
@@ -49,10 +51,10 @@ int parse_boolean(const char *line) {
 
     ret = regexec(&regex, line, 0, NULL, 0);
     if (!ret) {
-        regfree(&regex); // Free here
+        regfree(&regex); // Free here, yes true is found
         return 0;
     } else if (ret == REG_NOMATCH) {
-        regfree(&regex); // Free here
+        regfree(&regex); // Free here, no not true
         return 1;
     } else {
         char msgbuf[100];
@@ -224,6 +226,15 @@ int find_card_index(const char *card_name) {
 
 /* Main function */
 int _check_ratio(char *part, char *gres, uint32_t ncpu) {
+
+    char *config  = "config.toml";
+    read_config(config);
+
+    if (disabled == 1) {
+        printf("PLUGIN DISABLED");
+        return 1;
+    }
+
     if (part == NULL) {
         printf("%s: missed partition info", myname);
         return 1;
@@ -250,8 +261,9 @@ int _check_ratio(char *part, char *gres, uint32_t ncpu) {
                 // Check if gres has a card name (format "gpu:name:x")
                 if (sscanf(gres, "gpu:%39[^:]:%d", card_name, &gpu_count) == 2) {
                     // Format with card name found
+                    //prefix = " ";
                 } else if (sscanf(gres, "gpu:%d", &gpu_count) == 1) {
-                    // No card name, use default
+                    asprintf(&prefix, "No GPU Specified, please specifiy which gpu when submitting jobs. (ex, V100) \n");
                     strncpy(card_name, default_card, MAX_LINE_LENGTH);
                 } else {
                     // Invalid format
@@ -270,10 +282,14 @@ int _check_ratio(char *part, char *gres, uint32_t ncpu) {
                 
                 // Compare ratios
                 if (are_floats_equal(ratio, entries[index].ratio, EPSILON)) {
-                    printf("Calculated ratio %f is equal to stored ratio %f. Returning True.\n", ratio, entries[index].ratio);
+                    asprintf(&out, "Calculated ratio %f is equal to stored ratio %f. Returning True.\n", ratio, entries[index].ratio);
+                    printf(out);
+                    //printf("Calculated ratio %f is equal to stored ratio %f. Returning True.\n", ratio, entries[index].ratio);
                     return 1; // False, calculated ratio is greater
                 } else {
-                    printf("Calculated ratio %f is less than or more than stored ratio %f. Returning False.\n", ratio, entries[index].ratio);
+                    asprintf(&out, "%sGPU/CPU ratio %f is less than or more than required ratio %f.\n",prefix, ratio, entries[index].ratio);
+                    printf(out);
+                    free(prefix);
                     return 0; // True, calculated ratio is less than or equal
                 }
             }   
@@ -288,8 +304,6 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    char *config  = "config.toml";
-    read_config(config);
     print_config();
 
     uint32_t temper = atoi(argv[3]);
