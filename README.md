@@ -23,7 +23,7 @@ For testing without compiling slurm.
 
 ### TODO
 - Rust rewrite?
-- Handle unspecified gpu (ex. `gpu:2`) better rather than assuming `DefaultCard`
+- Handle unspecified gpu (ex. `gpu:2`) better rather than assuming `DefaultCard`. This could be a large issue.
 
 `squeue -O "UserName,tres-per-node,MinCpus,Partition, JobID" | awk '$2 != "N/A"'`
 
