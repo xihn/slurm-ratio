@@ -241,6 +241,9 @@ int find_card_index(const char *card_name) {
 
 /* Main function */
 int _check_ratio(char *part, char *gres, uint32_t ncpu) {
+
+    read_config(config_file);
+
     if (part == NULL) {
         info("%s: missed partition info", myname);
         return SLURM_SUCCESS;
