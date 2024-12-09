@@ -225,7 +225,7 @@ int find_card_index(const char *card_name) {
 }
 
 /* Main function */
-int _check_ratio(char *part, char *gres, uint32_t ncpu) {
+int _check_ratio(char *part, char *gres, uint32_t ncpu, char** err_msg) {
 
     char *config  = "config.toml";
     read_config(config);
@@ -289,6 +289,7 @@ int _check_ratio(char *part, char *gres, uint32_t ncpu) {
                 } else {
                     asprintf(&out, "%sGPU/CPU ratio %f is less than or more than required ratio %f.\n",prefix, ratio, entries[index].ratio);
                     printf(out);
+                    *err_msg = out;
                     free(prefix);
                     return 0; // True, calculated ratio is less than or equal
                 }
@@ -306,8 +307,10 @@ int main(int argc, char *argv[]) {
 
     print_config();
 
+    char *usererrrr = NULL;
+
     uint32_t temper = atoi(argv[3]);
-    int v = _check_ratio(argv[1], argv[2], temper);
+    int v = _check_ratio(argv[1], argv[2], temper, &usererrrr);
 
     printf(". \n");
     printf("Result: %d\n", v);
