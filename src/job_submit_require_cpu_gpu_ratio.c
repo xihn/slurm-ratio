@@ -279,7 +279,7 @@ int _check_ratio(char *part, char *gres, uint32_t ncpu, char **err_msg) {
                     prefix = " "; // this sucks but eh
                 } else if (sscanf(gres, "gpu:%d", &gpu_count) == 1) {
                     // No card name, use default
-                    info("%s: User did not specify gpu, assuming default gpu", myname, card_name);
+                    info("%s: User did not specify gpu, assuming default gpu", myname);
                     prefix = "No GPU Specified, please specifiy which gpu when submitting jobs. (ex, V100) \n";
                     strncpy(card_name, default_card, MAX_LINE_LENGTH);
                 } else {
@@ -303,7 +303,7 @@ int _check_ratio(char *part, char *gres, uint32_t ncpu, char **err_msg) {
                     // info("Calculated ratio %f is equal to stored ratio %f. Job Accepted.\n", ratio, entries[index].ratio);
                     return SLURM_SUCCESS; // False, calculated ratio is greater
                 } else {
-                    asprintf(&usrmsg, "%s Error: GPU/CPU ratio %f is less than or more than required ratio %f.\n",prefix, ratio, entries[index].ratio, );
+                    asprintf(&usrmsg, "%s Error: GPU/CPU ratio %f is less than or more than required ratio %f.\n",prefix, ratio, entries[index].ratio);
                     *err_msg = usrmsg;
                     // info("Calculated ratio %f is less than or more than stored ratio %f. Returning False.\n", ratio, entries[index].ratio);
                     return ESLURM_INVALID_GRES; // True, calculated ratio is less than or equal
