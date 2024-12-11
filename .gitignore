@@ -9,6 +9,8 @@
 *.obj
 *.elf
 
+*.data
+
 # Linker output
 *.ilk
 *.map

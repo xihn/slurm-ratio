@@ -1,0 +1,20 @@
+[Enable] # comment
+testtest = false # comment asdf
+enable_gres_ratio_plugin = true
+testest = false
+
+# random comment
+
+[gresratio] # comment test
+default_card = V100 # this MUST have a ratio defined below
+partition = es1 # only allows for one partition 
+card.GTRX2080TI = 2.0
+card.V100 = 2.0
+card.A40 = 4.0
+card.A100 = 4.0
+card.H100 = 6.0
+
+
+[loremipsum]
+blahblah = True
+loremipsum = [1,2,3]

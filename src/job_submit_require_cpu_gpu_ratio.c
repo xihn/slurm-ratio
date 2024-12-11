@@ -117,12 +117,12 @@ char* parse_string(const char *line, const char *pattern) {
     // Execute the regex
     reti = regexec(&regex, line, 2, match, 0);
     if (!reti) {
-        // Extract the matched substring
+        // Extract matched substring
         int start = match[1].rm_so;
         int end = match[1].rm_eo;
         int length = end - start;
 
-        // Allocate memory for the captured value
+        // memory for the captured value
         char *value = malloc(length + 1);
         if (value == NULL) {
             fprintf(stderr, "Memory allocation failed\n");
@@ -133,10 +133,10 @@ char* parse_string(const char *line, const char *pattern) {
         strncpy(value, &line[start], length);
         value[length] = '\0'; // Null-terminate the string
 
-        // Free memory allocated to the pattern buffer by regcomp()
+        //  memory allocated to the pattern buffer by regcomp()
         regfree(&regex);
 
-        return value; // Return the captured value
+        return value;
     } else if (reti == REG_NOMATCH) {
         regfree(&regex);
         return NULL; // No match found
