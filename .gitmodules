@@ -1,3 +1,0 @@
-[submodule "print/slurm-docker-cluster"]
-	path = slurm-docker-cluster
-	url = https://github.com/xihn/slurm-docker-cluster.git
