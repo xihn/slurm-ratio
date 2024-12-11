@@ -1,6 +1,6 @@
 #!/bin/bash
 
-cd /slurm-docker-cluster || exit
+cd slurm-docker-cluster || exit
 
 echo "Building Docker images..."
 docker compose build
